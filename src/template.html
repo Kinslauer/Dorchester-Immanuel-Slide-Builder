@@ -1,0 +1,547 @@
+<title>Sunday Slides</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@500;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: one calm column of three numbered steps (they are a real order), with a big "Make" bar at the end. */
+:root {
+  --bg: #f4f5f8;
+  --card: #ffffff;
+  --ink: #1b2230;
+  --muted: #586174;
+  --line: #d5d9e2;
+  --accent: #1d5c4a;      /* hymnal-cover green */
+  --accent-ink: #ffffff;
+  --accent-soft: #e3efea;
+  --warn: #9b2c2c;
+  --focus: #c08a1e;
+  --display: "Alegreya", Georgia, "Times New Roman", serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141820; --card: #1d2330; --ink: #eef1f6; --muted: #a8b0c0; --line: #343c4d;
+    --accent: #5fbf9f; --accent-ink: #0d1a15; --accent-soft: #1f3a31; --warn: #f08b8b; --focus: #e2b04a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141820; --card: #1d2330; --ink: #eef1f6; --muted: #a8b0c0; --line: #343c4d;
+  --accent: #5fbf9f; --accent-ink: #0d1a15; --accent-soft: #1f3a31; --warn: #f08b8b; --focus: #e2b04a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 19px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 140px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 22px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 2.3rem; margin: 0; line-height: 1.1; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+h2 { font-family: var(--display); font-size: 1.7rem; margin: 0; line-height: 1.2; display: flex; gap: 12px; align-items: baseline; text-wrap: balance; }
+h2 .n { display: inline-grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-family: var(--body); font-size: 1.15rem; font-weight: 700; flex: none; transform: translateY(-3px); }
+h3 { font-size: 1.05rem; margin: 0; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+section.step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 18px; }
+.hint { color: var(--muted); margin: 0; }
+button, .btn { font: inherit; font-size: 1.05rem; border-radius: 10px; border: 2px solid var(--line); background: var(--card); color: var(--ink); padding: 10px 16px; min-height: 50px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+button.small { min-height: 44px; padding: 6px 12px; font-size: .95rem; }
+button.danger { color: var(--warn); }
+input[type=text], input[type=search], input[type=date], textarea { font: inherit; color: var(--ink); background: var(--card); border: 2px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; }
+textarea { min-height: 300px; line-height: 1.45; resize: vertical; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.cols > * { min-width: 0; }
+@media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+.panel { display: grid; gap: 12px; align-content: start; }
+/* chosen list */
+ol.chosen { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: s; }
+ol.chosen li { counter-increment: s; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; padding: 12px; border: 2px solid var(--line); border-radius: 12px; align-items: center; }
+ol.chosen li::before { content: counter(s); font-weight: 700; font-size: 1.2rem; width: 2rem; text-align: center; color: var(--accent); }
+ol.chosen .t { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+ol.chosen .t small { display: block; font-weight: 400; color: var(--muted); }
+ol.chosen .acts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+.empty { border: 2px dashed var(--line); border-radius: 12px; padding: 18px; color: var(--muted); text-align: center; }
+/* library */
+.lib { max-height: 470px; overflow: auto; border: 2px solid var(--line); border-radius: 12px; }
+.lib button.song { display: flex; width: 100%; justify-content: space-between; gap: 10px; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; min-height: 56px; }
+.lib button.song:last-child { border-bottom: 0; }
+.lib button.song:hover { background: var(--accent-soft); }
+.lib button.song .add { color: var(--accent); font-weight: 700; white-space: nowrap; }
+.lib button.song .meta { display: block; font-size: .85rem; color: var(--muted); }
+.lib button.song[disabled] { opacity: .5; cursor: default; }
+.lib button.song[disabled] .add { color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+/* look */
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.swatch { display: grid; justify-items: center; gap: 4px; padding: 8px; min-width: 96px; }
+.swatch .chip { width: 64px; height: 44px; border-radius: 6px; border: 1px solid var(--line); display: grid; place-items: center; font-weight: 700; font-size: .9rem; }
+.swatch span { font-size: .9rem; }
+.pick[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.look { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 760px) { .look { grid-template-columns: 1fr; } }
+.preview { width: 100%; max-width: 100%; aspect-ratio: 4 / 3; border-radius: 6px; border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; position: relative; }
+.preview .txt { white-space: pre-wrap; text-align: center; padding: 3%; line-height: 1.2; width: 100%; }
+.previewnav { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.previewnav span { color: var(--muted); text-align: center; flex: 1; min-width: 0; }
+/* extras */
+.ann { display: grid; gap: 8px; padding: 12px; border: 2px solid var(--line); border-radius: 12px; }
+.ann textarea { min-height: 120px; }
+label.check { display: flex; gap: 12px; align-items: center; cursor: pointer; }
+label.check input { width: 26px; height: 26px; accent-color: var(--accent); flex: none; }
+/* make bar */
+.makebar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 2px solid var(--line); z-index: 5;
+  padding: 14px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.makebar .in { max-width: 1040px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.makebar .in > div { min-width: 0; }
+.makebar button.primary { font-size: 1.25rem; padding: 12px 26px; min-height: 62px; }
+#status { margin: 0; font-weight: 700; }
+#status.ok { color: var(--accent); }
+#status.bad { color: var(--warn); }
+/* dialog */
+dialog { border: 0; border-radius: 14px; padding: 0; width: min(720px, calc(100vw - 32px)); background: var(--card); color: var(--ink); }
+dialog::backdrop { background: rgba(10, 14, 20, .55); }
+dialog form { padding: 22px; display: grid; gap: 14px; }
+dialog .row { justify-content: flex-end; }
+footer { color: var(--muted); font-size: .9rem; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+footer button { font-size: .9rem; min-height: 40px; }
+@media (prefers-reduced-motion: no-preference) { button { transition: border-color .15s, background .15s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Sunday Slides</h1>
+    <p>Dorchester Immanuel Church of the Nazarene</p>
+  </header>
+
+  <section class="step" aria-labelledby="h-songs">
+    <h2 id="h-songs"><span class="n">1</span>Pick this Sunday's songs</h2>
+    <div class="cols">
+      <div class="panel">
+        <h3>This Sunday</h3>
+        <ol class="chosen" id="chosen"></ol>
+        <div class="row">
+          <button type="button" id="btn-new">+ Type in a new song</button>
+          <button type="button" id="btn-hymn">+ Hymn from the book</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>All songs</h3>
+        <input type="search" id="find" placeholder="Type a few words to find a song" aria-label="Find a song">
+        <div class="lib" id="lib" role="list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="h-look">
+    <h2 id="h-look"><span class="n">2</span>Choose how the words look</h2>
+    <div class="look">
+      <div class="panel">
+        <h3>Background</h3>
+        <div class="swatches" id="bgs"></div>
+        <h3>Size of the words</h3>
+        <div class="row" id="sizes"></div>
+        <h3>Letters</h3>
+        <div class="row" id="fonts"></div>
+        <label class="check"><input type="checkbox" id="bold"> Make the words bold</label>
+      </div>
+      <div class="panel">
+        <h3>How it will look</h3>
+        <div class="preview" id="preview"><div class="txt"></div></div>
+        <div class="previewnav">
+          <button type="button" class="small" id="pv-prev" aria-label="Previous slide">◀ Back</button>
+          <span id="pv-label"></span>
+          <button type="button" class="small" id="pv-next" aria-label="Next slide">Next ▶</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="h-extra">
+    <h2 id="h-extra"><span class="n">3</span>Welcome and announcements</h2>
+    <div class="cols">
+      <div class="panel">
+        <label class="check"><input type="checkbox" id="w-start"> Start with the Welcome slide</label>
+        <label class="check"><input type="checkbox" id="w-end"> End with the Welcome slide</label>
+        <h3>Welcome picture</h3>
+        <div class="row" id="welcomes"></div>
+      </div>
+      <div class="panel">
+        <h3>Announcements</h3>
+        <p class="hint">Each one becomes its own slide, right after the Welcome slide.</p>
+        <div id="anns" class="panel"></div>
+        <div class="row"><button type="button" id="btn-ann">+ Add an announcement</button></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Your songs and choices are saved in this browser.</span>
+    <button type="button" id="btn-backup">Save a backup of my songs</button>
+    <button type="button" id="btn-restore">Restore from a backup</button>
+    <input type="file" id="restore-file" accept=".json,application/json" hidden>
+  </footer>
+</div>
+
+<div class="makebar">
+  <div class="in">
+    <div>
+      <label for="date" style="font-weight:700">Sunday date</label>
+      <div class="row"><input type="date" id="date" style="width:auto"><p id="status" role="status"></p></div>
+    </div>
+    <button type="button" class="primary" id="btn-make">Make my PowerPoint</button>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="dlg-form">
+    <h2 id="dlg-title">Change the words</h2>
+    <label for="dlg-name" style="font-weight:700">Song name</label>
+    <input type="text" id="dlg-name">
+    <div id="dlg-words-wrap" class="panel">
+      <label for="dlg-words" style="font-weight:700">Words</label>
+      <p class="hint" style="margin:0">Leave one empty line where you want a new slide to start.</p>
+      <textarea id="dlg-words"></textarea>
+    </div>
+    <p id="dlg-confirm" class="hint" hidden></p>
+    <div class="row">
+      <button type="button" class="danger" id="dlg-delete">Remove from my song list</button>
+      <button type="button" id="dlg-cancel">Cancel</button>
+      <button type="button" class="primary" id="dlg-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script>/*PPTXGEN*/</script>
+<script>
+const BUILTIN = /*SONGS*/;
+const IMG = /*IMAGES*/;
+
+/* ---------- storage ---------- */
+const KEY_LIB = "sundaySlides.songs.v1", KEY_WEEK = "sundaySlides.week.v1";
+function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+// Library = built-in songs plus her own changes. Each song: {id, t, k ('song'|'hymn'), s: [slide text], u, d}
+let custom = load(KEY_LIB, { edits: {}, added: [], removed: [] });
+function library() {
+  const list = [];
+  BUILTIN.forEach((b, i) => {
+    const id = "b" + i;
+    if (custom.removed.includes(id)) return;
+    list.push(Object.assign({ id }, b, custom.edits[id] || {}));
+  });
+  custom.added.forEach(a => { if (!custom.removed.includes(a.id)) list.push(a); });
+  return list.sort((a, b) => a.t.toLowerCase().localeCompare(b.t.toLowerCase()));
+}
+function songById(id) { return library().find(s => s.id === id); }
+
+function nextSunday() {
+  const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7));
+  return d.toISOString().slice(0, 10);
+}
+let week = load(KEY_WEEK, null) || {
+  songs: [], bg: "alt", size: "L", font: "Arial", bold: false,
+  welcomeStart: true, welcomeEnd: true, welcome: "black", anns: []
+};
+if (!week.date || week.date < new Date().toISOString().slice(0, 10)) week.date = nextSunday();
+function persist() { save(KEY_WEEK, week); save(KEY_LIB, custom); }
+
+/* ---------- look options ---------- */
+const BGS = [
+  { id: "alt", name: "Black & white, taking turns" },
+  { id: "000000", name: "Black" },
+  { id: "FFFFFF", name: "White" },
+  { id: "17365D", name: "Dark blue" },
+  { id: "1E4D2B", name: "Dark green" },
+  { id: "5B1A1A", name: "Dark red" },
+  { id: "3B2A5C", name: "Purple" },
+  { id: "FFF4D6", name: "Cream" }
+];
+const SIZES = [ { id: "S", name: "Small", pt: 44 }, { id: "M", name: "Medium", pt: 54 }, { id: "L", name: "Large", pt: 66 }, { id: "XL", name: "Extra large", pt: 80 } ];
+const FONTS = ["Arial", "Calibri", "Georgia", "Verdana"];
+const WELCOMES = [ { id: "black", name: "Black with logo" }, { id: "photo", name: "Church photo" } ];
+
+function isDark(hex) { const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4), 16); return 0.299 * r + 0.587 * g + 0.114 * b < 140; }
+function colorsFor(songIndex) {
+  const bg = week.bg === "alt" ? (songIndex % 2 === 0 ? "000000" : "FFFFFF") : week.bg;
+  return { bg, fg: isDark(bg) ? "FFFFFF" : "000000" };
+}
+
+/* ---------- text fitting (same rule for preview and PowerPoint) ---------- */
+// Slide is 10in x 7.5in. Text box 9.4in x 6.9in with small inner margins.
+const BOX_W = 9.2 * 96, BOX_H = 6.7 * 96;
+const meas = document.createElement("canvas").getContext("2d");
+function wrapCount(text, pt) {
+  const px = pt * 96 / 72;
+  meas.font = (week.bold ? "bold " : "") + px + "px " + week.font + ", Arial, sans-serif";
+  let lines = 0;
+  for (const raw of text.split("\n")) {
+    const words = raw.split(/\s+/).filter(Boolean);
+    if (!words.length) { lines++; continue; }
+    let cur = "";
+    for (const w of words) {
+      const test = cur ? cur + " " + w : w;
+      if (meas.measureText(test).width * 1.06 > BOX_W && cur) { lines++; cur = w; } else cur = test;
+    }
+    lines++;
+  }
+  return lines;
+}
+function fitPt(text) {
+  const max = (SIZES.find(s => s.id === week.size) || SIZES[2]).pt;
+  for (let pt = max; pt > 20; pt -= 2) {
+    if (wrapCount(text, pt) * pt * 1.2 * 96 / 72 <= BOX_H) return pt;
+  }
+  return 20;
+}
+
+/* ---------- slides for this Sunday ---------- */
+function slidesForSong(entry) {
+  const s = entry.custom || songById(entry.id);
+  if (!s) return [];
+  if (s.k === "hymn") return [s.s && s.s[0] ? s.s[0] : s.t + "\n(Hymn)"];
+  return s.s.filter(x => x.trim());
+}
+function songTitle(entry) { const s = entry.custom || songById(entry.id); return s ? s.t : "(missing song)"; }
+function allLyricSlides() {
+  const out = [];
+  week.songs.forEach((e, i) => slidesForSong(e).forEach((t, j) => out.push({ text: t, song: i, title: songTitle(e), n: j + 1 })));
+  return out;
+}
+
+/* ---------- render ---------- */
+const $ = id => document.getElementById(id);
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const k in attrs || {}) { if (k === "on") for (const ev in attrs.on) n.addEventListener(ev, attrs.on[ev]); else if (k === "text") n.textContent = attrs.text; else n.setAttribute(k, attrs[k]); }
+  kids.forEach(k => n.append(k));
+  return n;
+}
+
+function renderChosen() {
+  const ol = $("chosen"); ol.innerHTML = "";
+  if (!week.songs.length) { ol.append(el("li", { class: "empty", style: "display:block" }, "No songs yet. Tap a song on the right to add it.")); return; }
+  week.songs.forEach((e, i) => {
+    const s = e.custom || songById(e.id);
+    const count = slidesForSong(e).length;
+    const t = el("div", { class: "t" }, songTitle(e), el("small", { text: s && s.k === "hymn" ? "Hymn title slide" : count + (count === 1 ? " slide" : " slides") }));
+    const acts = el("div", { class: "acts" },
+      el("button", { type: "button", class: "small", "aria-label": "Move up", on: { click: () => move(i, -1) } }, "▲ Up"),
+      el("button", { type: "button", class: "small", "aria-label": "Move down", on: { click: () => move(i, 1) } }, "▼ Down"),
+      el("button", { type: "button", class: "small", on: { click: () => openEdit({ entry: i }) } }, "Change words"),
+      el("button", { type: "button", class: "small danger", on: { click: () => { week.songs.splice(i, 1); changed(); } } }, "Take out")
+    );
+    ol.append(el("li", {}, t, acts));
+  });
+}
+function move(i, d) { const j = i + d; if (j < 0 || j >= week.songs.length) return; [week.songs[i], week.songs[j]] = [week.songs[j], week.songs[i]]; changed(); }
+
+function renderLib() {
+  const q = $("find").value.toLowerCase().trim();
+  const box = $("lib"); box.innerHTML = "";
+  const chosenIds = new Set(week.songs.map(e => e.id));
+  const list = library().filter(s => !q || s.t.toLowerCase().includes(q) || s.s.join(" ").toLowerCase().includes(q))
+    .sort((a, b) => q ? (b.t.toLowerCase().includes(q) - a.t.toLowerCase().includes(q)) : 0);
+  if (!list.length) { box.append(el("p", { class: "hint", style: "padding:14px" }, "No song found. Tap “+ Type in a new song” to add it.")); return; }
+  list.forEach(s => {
+    const already = chosenIds.has(s.id);
+    const meta = s.k === "hymn" ? "Hymn title" : s.s.length + (s.s.length === 1 ? " slide" : " slides") + (s.d ? " · last used " + new Date(s.d + "T12:00").toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "");
+    box.append(el("button", { type: "button", class: "song", role: "listitem", disabled: already ? "" : null, on: { click: () => { week.songs.push({ id: s.id }); changed(); } } },
+      el("span", {}, s.t, el("span", { class: "meta", text: meta })),
+      el("span", { class: "add", text: already ? "Added" : "+ Add" })));
+    if (!already) box.lastChild.removeAttribute("disabled");
+  });
+}
+
+function renderLook() {
+  const bgs = $("bgs"); bgs.innerHTML = "";
+  BGS.forEach(b => {
+    const chip = b.id === "alt"
+      ? el("span", { class: "chip", style: "background:linear-gradient(90deg,#000 50%,#fff 50%)" })
+      : el("span", { class: "chip", style: "background:#" + b.id + ";color:" + (isDark(b.id) ? "#fff" : "#000") }, "Aa");
+    bgs.append(el("button", { type: "button", class: "swatch pick", "aria-pressed": String(week.bg === b.id), on: { click: () => { week.bg = b.id; changed(); } } }, chip, el("span", { text: b.name })));
+  });
+  const sizes = $("sizes"); sizes.innerHTML = "";
+  SIZES.forEach(s => sizes.append(el("button", { type: "button", class: "pick", "aria-pressed": String(week.size === s.id), on: { click: () => { week.size = s.id; changed(); } } }, s.name)));
+  const fonts = $("fonts"); fonts.innerHTML = "";
+  FONTS.forEach(f => fonts.append(el("button", { type: "button", class: "pick", style: "font-family:" + f + ", Arial, sans-serif", "aria-pressed": String(week.font === f), on: { click: () => { week.font = f; changed(); } } }, f)));
+  $("bold").checked = !!week.bold;
+}
+
+let pv = 0;
+function renderPreview() {
+  const slides = allLyricSlides();
+  const box = $("preview"), txt = box.querySelector(".txt");
+  if (!slides.length) {
+    const c = colorsFor(0);
+    box.style.background = "#" + c.bg; txt.style.color = "#" + c.fg;
+    txt.style.fontFamily = week.font + ", Arial, sans-serif"; txt.style.fontWeight = week.bold ? "700" : "400";
+    txt.textContent = "Pick a song to see\nhow it will look";
+    txt.style.fontSize = (box.clientWidth / 960 * 54 * 96 / 72) + "px";
+    $("pv-label").textContent = "Example";
+    return;
+  }
+  pv = Math.max(0, Math.min(pv, slides.length - 1));
+  const s = slides[pv], c = colorsFor(s.song);
+  box.style.background = "#" + c.bg;
+  txt.style.color = "#" + c.fg;
+  txt.style.fontFamily = week.font + ", Arial, sans-serif";
+  txt.style.fontWeight = week.bold ? "700" : "400";
+  txt.textContent = s.text;
+  txt.style.fontSize = (box.clientWidth / 960 * fitPt(s.text) * 96 / 72) + "px";
+  $("pv-label").textContent = s.title + " · slide " + s.n + " (" + (pv + 1) + " of " + slides.length + ")";
+}
+
+function renderExtras() {
+  $("w-start").checked = week.welcomeStart; $("w-end").checked = week.welcomeEnd;
+  const w = $("welcomes"); w.innerHTML = "";
+  WELCOMES.forEach(o => w.append(el("button", { type: "button", class: "pick", "aria-pressed": String(week.welcome === o.id), on: { click: () => { week.welcome = o.id; changed(); } } }, o.name)));
+  const box = $("anns"); box.innerHTML = "";
+  if (!week.anns.length) box.append(el("p", { class: "hint" }, "No announcements this week."));
+  week.anns.forEach((a, i) => {
+    const ta = el("textarea", { id: "ann-" + i, "aria-label": "Announcement " + (i + 1), placeholder: "For example: Fellowship lunch after service today. Everyone is welcome!" });
+    ta.value = a;
+    ta.addEventListener("input", () => { week.anns[i] = ta.value; persist(); });
+    box.append(el("div", { class: "ann" }, ta, el("div", { class: "row" }, el("button", { type: "button", class: "small danger", on: { click: () => { week.anns.splice(i, 1); changed(); } } }, "Remove this announcement"))));
+  });
+}
+
+function changed() { persist(); renderChosen(); renderLib(); renderLook(); renderPreview(); renderExtras(); $("status").textContent = ""; }
+
+/* ---------- edit dialog ---------- */
+let editing = null;
+function openEdit(opts) {
+  editing = opts;
+  const dlg = $("dlg");
+  let s = null;
+  if (opts.entry != null) { const e = week.songs[opts.entry]; s = e.custom || songById(e.id); }
+  const hymn = opts.hymn || (s && s.k === "hymn");
+  $("dlg-title").textContent = opts.entry != null ? "Change the words" : hymn ? "Add a hymn from the book" : "Type in a new song";
+  $("dlg-name").value = s ? s.t : "";
+  $("dlg-name").placeholder = hymn ? "For example: Amazing Grace #92" : "For example: Amazing Grace";
+  $("dlg-words-wrap").hidden = !!hymn;
+  $("dlg-words").value = s && !hymn ? s.s.join("\n\n") : "";
+  $("dlg-delete").hidden = opts.entry == null;
+  $("dlg-confirm").hidden = true; $("dlg-delete").dataset.armed = "";
+  $("dlg-delete").textContent = "Remove from my song list";
+  dlg.showModal();
+  (opts.entry != null && !hymn ? $("dlg-words") : $("dlg-name")).focus();
+}
+$("dlg-cancel").addEventListener("click", () => $("dlg").close());
+$("dlg-save").addEventListener("click", () => {
+  const name = $("dlg-name").value.trim();
+  const hymn = $("dlg-words-wrap").hidden;
+  const words = $("dlg-words").value.replace(/\r/g, "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  if (!name) { $("dlg-name").focus(); $("dlg-name").placeholder = "Please type a name first"; return; }
+  if (!hymn && !words.length) { $("dlg-words").focus(); return; }
+  const data = hymn ? { t: name, k: "hymn", s: [name + "\n(Hymn)"] } : { t: name, k: "song", s: words };
+  if (editing.entry != null) {
+    const e = week.songs[editing.entry];
+    if (e.id && e.id[0] === "b") custom.edits[e.id] = Object.assign({}, custom.edits[e.id], data);
+    else { const a = custom.added.find(x => x.id === e.id); if (a) Object.assign(a, data); }
+  } else {
+    const id = "c" + Date.now();
+    custom.added.push(Object.assign({ id, d: week.date }, data));
+    week.songs.push({ id });
+  }
+  $("dlg").close(); changed();
+});
+$("dlg-delete").addEventListener("click", () => {
+  const btn = $("dlg-delete");
+  if (!btn.dataset.armed) { btn.dataset.armed = "1"; btn.textContent = "Yes, remove it for good"; $("dlg-confirm").hidden = false; $("dlg-confirm").textContent = "This takes the song out of your song list. Tap the red button again to be sure."; return; }
+  const e = week.songs[editing.entry];
+  custom.removed.push(e.id);
+  week.songs.splice(editing.entry, 1);
+  $("dlg").close(); changed();
+});
+$("btn-new").addEventListener("click", () => openEdit({}));
+$("btn-hymn").addEventListener("click", () => openEdit({ hymn: true }));
+$("btn-ann").addEventListener("click", () => { week.anns.push(""); changed(); const t = $("ann-" + (week.anns.length - 1)); if (t) t.focus(); });
+$("find").addEventListener("input", renderLib);
+$("bold").addEventListener("change", e => { week.bold = e.target.checked; changed(); });
+$("w-start").addEventListener("change", e => { week.welcomeStart = e.target.checked; changed(); });
+$("w-end").addEventListener("change", e => { week.welcomeEnd = e.target.checked; changed(); });
+$("pv-prev").addEventListener("click", () => { pv--; renderPreview(); });
+$("pv-next").addEventListener("click", () => { pv++; renderPreview(); });
+$("date").value = week.date;
+$("date").addEventListener("change", e => { week.date = e.target.value || nextSunday(); persist(); });
+window.addEventListener("resize", renderPreview);
+
+/* ---------- saving files ---------- */
+async function offerFile(filename, blob) {
+  try {
+    if (window.claude && window.claude.use) {
+      const dl = await window.claude.use("downloads");
+      if (dl) { await dl.save({ filename, data: blob }); return true; }
+    }
+  } catch (e) { if (e && e.code === "declined") return false; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  return true;
+}
+
+/* ---------- build the PowerPoint ---------- */
+function addWelcome(pptx) {
+  const s = pptx.addSlide();
+  if (week.welcome === "photo") {
+    s.background = { color: "000000" };
+    s.addImage({ data: IMG.church, x: 0, y: 0, w: 10, h: 7.5 });
+    s.addImage({ data: IMG.logoWhite, x: 2.43, y: 2.56, w: 5.23, h: 3.89 });
+    s.addText("Dorchester Immanuel", { x: 3.95, y: 0.94, w: 3.19, h: 1.78, fontFace: "Calibri", fontSize: 40, bold: true, color: "FFFFFF", align: "center", valign: "top" });
+  } else {
+    s.background = { data: IMG.welcomeBg };
+    s.addText([
+      { text: "WELCOME", options: { fontSize: 66, breakLine: true } },
+      { text: "TO", options: { fontSize: 54, breakLine: true } },
+      { text: "DORCHESTER IMMANUEL", options: { fontSize: 54 } }
+    ], { x: 0.17, y: 0.42, w: 9.67, h: 3.03, fontFace: "Garamond", color: "FFFFFF", align: "center", valign: "top" });
+    s.addImage({ data: IMG.logo, x: 3.17, y: 3.63, w: 3.48, h: 2.58 });
+  }
+}
+function addTextSlide(pptx, text, c) {
+  const s = pptx.addSlide();
+  s.background = { color: c.bg };
+  s.addText(text, { x: 0.3, y: 0.3, w: 9.4, h: 6.9, fontFace: week.font, fontSize: fitPt(text), bold: !!week.bold, color: c.fg, align: "center", valign: "middle", fit: "none", lineSpacingMultiple: 1.0 });
+}
+$("btn-make").addEventListener("click", async () => {
+  const st = $("status");
+  if (!week.songs.length && !week.anns.some(a => a.trim())) { st.className = "bad"; st.textContent = "Pick at least one song first."; return; }
+  const btn = $("btn-make"); btn.disabled = true; st.className = ""; st.textContent = "Making your slides…";
+  try {
+    const pptx = new PptxGenJS();
+    pptx.layout = "LAYOUT_4x3";
+    pptx.title = "Sunday " + week.date;
+    if (week.welcomeStart) addWelcome(pptx);
+    week.anns.filter(a => a.trim()).forEach(a => addTextSlide(pptx, a.trim(), week.bg === "alt" ? { bg: "FFFFFF", fg: "000000" } : colorsFor(0)));
+    week.songs.forEach((e, i) => slidesForSong(e).forEach(t => addTextSlide(pptx, t, colorsFor(i))));
+    if (week.welcomeEnd) addWelcome(pptx);
+    const blob = await pptx.write({ outputType: "blob" });
+    const [y, m, d] = week.date.split("-");
+    const name = "Sunday " + Number(m) + "-" + Number(d) + "-" + y + ".pptx";
+    const ok = await offerFile(name, blob);
+    st.className = ok ? "ok" : "bad";
+    st.textContent = ok ? "Done! Look in your Downloads for “" + name + "”." : "The file was not saved. Tap the green button to try again.";
+  } catch (err) {
+    st.className = "bad"; st.textContent = "Something went wrong making the file. Please try again.";
+    console.error(err);
+  } finally { btn.disabled = false; }
+});
+
+/* ---------- backup ---------- */
+$("btn-backup").addEventListener("click", () => offerFile("Sunday Slides backup " + new Date().toISOString().slice(0, 10) + ".json", new Blob([JSON.stringify({ custom, week }, null, 1)], { type: "application/json" })));
+$("btn-restore").addEventListener("click", () => $("restore-file").click());
+$("restore-file").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const j = JSON.parse(await f.text()); if (j.custom) custom = j.custom; if (j.week) week = j.week; changed(); $("status").className = "ok"; $("status").textContent = "Your songs are back."; }
+  catch (err) { $("status").className = "bad"; $("status").textContent = "That file is not a Sunday Slides backup."; }
+});
+
+changed();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(renderPreview);
+</script>
