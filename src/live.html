@@ -1,0 +1,1590 @@
+<title>Sunday Live</title>
+<style>
+/* Layout: a MediaShout-style console. Menu bar and icon ribbon on top; service order | slides & library tabs | what's on the screen. Dark by default, light on request. */
+:root {
+  --bg: #121418;
+  --chrome: #1d2026;
+  --chrome-2: #262a31;
+  --panel: #1a1d22;
+  --panel-head: #23272e;
+  --card: #262a31;
+  --hover: #2f343d;
+  --ink: #eceef2;
+  --muted: #9aa3b2;
+  --line: #363c47;
+  --accent: #3b8eea;
+  --accent-ink: #ffffff;
+  --accent-soft: #1b3150;
+  --live: #e5483b;
+  --live-ink: #ffffff;
+  --live-soft: #3c1d1a;
+  --warn: #ff8a80;
+  --focus: #f2b33d;
+  --c-song: #3b8eea; --c-hymn: #9b6bdf; --c-scripture: #e0a526; --c-slide: #2fb380; --c-welcome: #7d8798; --c-countdown: #ef7d3c;
+  --body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg: #e6e9ee; --chrome: #f7f8fa; --chrome-2: #eceff3; --panel: #ffffff; --panel-head: #eef1f5; --card: #ffffff; --hover: #e7ecf3;
+  --ink: #161b24; --muted: #566072; --line: #cdd3dc;
+  --accent: #1f6fd1; --accent-ink: #ffffff; --accent-soft: #dce8fa;
+  --live: #c9302c; --live-ink: #ffffff; --live-soft: #fbe2df; --warn: #b3261e; --focus: #b7791f;
+  --c-song: #1f6fd1; --c-hymn: #7a4cc2; --c-scripture: #b8860b; --c-slide: #1d8f63; --c-welcome: #667085; --c-countdown: #d0611f;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.35; margin: 0; }
+.app { height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr); }
+svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
+svg.i.f { fill: currentColor; stroke: none; }
+
+/* menu bar */
+.menubar { display: flex; align-items: center; gap: 2px; padding: 0 10px; background: var(--chrome); border-bottom: 1px solid var(--line); min-height: 34px; }
+.menubar .brand { white-space: nowrap; font-weight: 800; letter-spacing: .02em; margin-right: 10px; display: flex; align-items: center; gap: 6px; }
+.menubar .brand svg { color: var(--accent); }
+.menu { position: relative; }
+.menu > button { border: 0; background: none; min-height: 30px; padding: 4px 10px; border-radius: 4px; font-weight: 600; color: var(--ink); }
+.menu > button:hover, .menu.open > button { background: var(--hover); }
+.menu .drop { position: absolute; top: 100%; left: 0; z-index: 30; min-width: 260px; background: var(--chrome); border: 1px solid var(--line); border-radius: 6px; padding: 4px; box-shadow: 0 10px 30px rgba(0,0,0,.35); display: none; }
+.menu.open .drop { display: grid; }
+.drop button { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 10px; border: 0; background: none; text-align: left; min-height: 34px; padding: 4px 10px; border-radius: 4px; font-weight: 500; color: var(--ink); }
+.drop button:hover, .drop button:focus-visible { background: var(--accent); color: var(--accent-ink); outline: none; }
+.drop button:hover kbd, .drop button:focus-visible kbd { color: inherit; border-color: currentColor; }
+.drop hr { border: 0; border-top: 1px solid var(--line); margin: 4px 6px; }
+.menubar .sp { flex: 1; }
+.menubar input { width: 230px; min-height: 28px; padding: 3px 8px; font-weight: 600; }
+
+/* ribbon */
+.ribbon { display: flex; align-items: stretch; gap: 0; padding: 6px 8px 0; background: var(--chrome-2); border-bottom: 1px solid var(--line); overflow-x: auto; }
+.rgroup { display: grid; grid-template-rows: 1fr auto; padding: 0 6px; border-right: 1px solid var(--line); }
+.rgroup:last-child { border-right: 0; }
+.rgroup .btns { display: flex; gap: 2px; align-items: stretch; }
+.rgroup .glbl { text-align: center; font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 2px 0 4px; font-weight: 700; }
+.rb { display: grid; justify-items: center; align-content: center; gap: 3px; min-width: 64px; min-height: 58px; padding: 4px 6px; border: 1px solid transparent; border-radius: 6px; background: none; font-size: .78rem; font-weight: 700; line-height: 1.1; color: var(--ink); }
+.rb svg.i { width: 26px; height: 26px; }
+.rb:hover { background: var(--hover); border-color: var(--line); }
+.rb[aria-pressed=true] { background: var(--live); color: var(--live-ink); border-color: var(--live); box-shadow: none; }
+.rb.go svg { color: var(--accent); }
+.rb.go[aria-pressed=true] { background: var(--accent-soft); color: var(--ink); border-color: var(--accent); }
+.rb.add svg { color: var(--c); }
+.rb[data-armed="1"] { background: var(--live-soft); color: var(--warn); border-color: var(--live); }
+
+main.cols { display: grid; grid-template-columns: 300px minmax(0, 1fr) 410px; gap: 6px; padding: 6px; min-height: 0; }
+main.cols > section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+@media (max-width: 1150px) { main.cols { grid-template-columns: 270px minmax(0, 1fr); } main.cols > .livecol { grid-column: 1 / -1; } .app { height: auto; } }
+@media (max-width: 760px) { main.cols { grid-template-columns: 1fr; } .menubar input { width: 140px; } }
+.colhead { padding: 6px 10px; background: var(--panel-head); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 40px; }
+.colhead h2 { font-size: .8rem; margin: 0; flex: 1; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.colhead .count { color: var(--muted); font-weight: 600; }
+.scroll { overflow: auto; min-height: 0; flex: 1; padding: 10px; }
+h3 { font-size: .72rem; margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 800; }
+h3:first-child { margin-top: 0; }
+.hint { color: var(--muted); margin: 0; font-size: .85rem; }
+button, .btn { font: inherit; font-size: .9rem; font-weight: 600; border-radius: 5px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 5px 12px; min-height: 36px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+button:hover { background: var(--hover); border-color: var(--accent); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 800; }
+button.primary:hover { filter: brightness(1.1); }
+button.small { min-height: 30px; padding: 2px 9px; font-size: .82rem; }
+button.danger { color: var(--warn); }
+button[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+button.big { min-height: 54px; font-size: 1.05rem; font-weight: 800; letter-spacing: .02em; }
+button.big svg.i { width: 24px; height: 24px; }
+input[type=text], input[type=search], input[type=number], input[type=time], textarea, select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 6px 9px; width: 100%; }
+select { width: auto; }
+textarea { min-height: 220px; line-height: 1.4; resize: vertical; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.grow { flex: 1; min-width: 0; }
+label.check { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+kbd { font-family: var(--body); font-size: .72rem; font-weight: 700; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--muted); }
+
+/* service order: numbered cues with colored type tiles */
+ol.svc { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+ol.svc li { display: grid; grid-template-columns: 22px 34px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 5px 6px 5px 4px; background: var(--card); border: 1px solid var(--line); border-radius: 5px; cursor: pointer; }
+ol.svc li:hover { background: var(--hover); }
+ol.svc li.sel { border-color: var(--accent); background: var(--accent-soft); }
+ol.svc li.live { border-color: var(--live); box-shadow: inset 4px 0 0 var(--live); }
+ol.svc li.drag-over { border-style: dashed; border-color: var(--focus); }
+ol.svc .num { font-weight: 800; color: var(--muted); text-align: right; font-size: .85rem; font-variant-numeric: tabular-nums; }
+ol.svc li.live .num { color: var(--live); }
+ol.svc .ic { width: 34px; height: 34px; border-radius: 6px; display: grid; place-items: center; background: var(--c); color: #fff; }
+ol.svc .ic svg.i { width: 20px; height: 20px; stroke-width: 2.6; }
+ol.svc .t { font-weight: 700; overflow-wrap: anywhere; line-height: 1.25; }
+ol.svc .t small { display: block; font-weight: 500; color: var(--muted); font-size: .76rem; }
+ol.svc .acts { display: flex; gap: 2px; opacity: .55; }
+ol.svc li:hover .acts, ol.svc li.sel .acts { opacity: 1; }
+ol.svc .acts button { min-height: 26px; width: 26px; padding: 0; }
+ol.svc .acts svg.i { width: 15px; height: 15px; }
+.empty { border: 1px dashed var(--line); border-radius: 6px; padding: 14px; color: var(--muted); text-align: center; font-size: .88rem; }
+.addrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 6px; border-top: 1px solid var(--line); background: var(--panel-head); }
+.addrow button { display: grid; justify-items: center; gap: 2px; min-height: 52px; font-size: .75rem; font-weight: 700; padding: 4px; }
+.addrow button svg.i { width: 22px; height: 22px; color: var(--c); }
+
+/* tabs */
+.tabs { display: flex; gap: 2px; padding: 4px 6px 0; background: var(--panel-head); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.tabs button { border: 0; border-bottom: 3px solid transparent; border-radius: 5px 5px 0 0; min-height: 40px; background: none; font-weight: 700; color: var(--muted); padding: 4px 14px; }
+.tabs button:hover { color: var(--ink); background: var(--hover); }
+.tabs button[aria-selected=true] { color: var(--ink); border-bottom-color: var(--accent); background: var(--panel); box-shadow: none; }
+.tabs button[aria-selected=true] svg.i { color: var(--accent); }
+.pane[hidden] { display: none !important; }
+
+/* slide thumbnails */
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.thumb { justify-content: stretch; align-items: stretch; padding: 0; border: 2px solid var(--line); border-radius: 5px; overflow: hidden; display: grid; background: #000; text-align: left; min-height: 0; gap: 0; }
+.thumb:hover { border-color: var(--accent); }
+.thumb.live { border-color: var(--live); }
+.thumb .cap { background: var(--card); color: var(--muted); font-size: .74rem; font-weight: 700; padding: 2px 6px; display: flex; justify-content: space-between; gap: 6px; }
+.thumb.live .cap { background: var(--live); color: var(--live-ink); }
+.screen { position: relative; overflow: hidden; background: #000; width: 100%; }
+
+/* library lists */
+.list { border: 1px solid var(--line); border-radius: 5px; overflow: auto; background: var(--bg); }
+.list button.it { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; min-height: 42px; background: none; font-weight: 700; }
+.list button.it:last-child { border-bottom: 0; }
+.list button.it:hover { background: var(--hover); }
+.list button.it.sel { background: var(--accent); color: var(--accent-ink); }
+.list button.it small { display: block; color: var(--muted); font-size: .76rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list button.it.sel small { color: inherit; opacity: .85; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 10px; min-height: 0; height: 100%; }
+.split > * { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; height: auto; } }
+.search { position: relative; }
+.search svg.i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 18px; height: 18px; }
+.search input { padding-left: 34px; }
+#ref { font-size: 1.15rem; font-weight: 700; min-height: 46px; }
+
+/* bible */
+.verses { border: 1px solid var(--line); border-radius: 5px; overflow: auto; flex: 1; min-height: 200px; background: var(--bg); }
+.verses p { margin: 0; padding: 6px 10px; cursor: pointer; border-bottom: 1px solid var(--line); user-select: none; }
+.verses p:hover { background: var(--hover); }
+.verses p.sel { background: var(--accent-soft); box-shadow: inset 4px 0 0 var(--accent); }
+.verses p.live { box-shadow: inset 4px 0 0 var(--live); background: var(--live-soft); }
+.verses p b { color: var(--c-scripture); margin-right: 6px; }
+.refhit { padding: 8px 10px; border: 1px solid var(--accent); border-radius: 5px; background: var(--accent-soft); font-weight: 800; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* look */
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.sw { width: 54px; height: 40px; padding: 0; border-radius: 5px; background-size: cover; background-position: center; font-size: .7rem; font-weight: 800; display: grid; place-items: center; }
+.sw[aria-pressed=true] { outline: 3px solid var(--accent); outline-offset: 2px; box-shadow: none; }
+.lookgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.lookgrid > .sticky { position: sticky; top: 0; }
+@media (max-width: 900px) { .lookgrid { grid-template-columns: 1fr; } }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+
+/* live column */
+.mon { padding: 10px; display: grid; gap: 8px; }
+.mon .lbl { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 800; font-size: .74rem; text-transform: uppercase; letter-spacing: .09em; }
+.mon .lbl.on > span:first-child { background: var(--live); color: var(--live-ink); padding: 2px 8px; border-radius: 3px; }
+.mon .lbl span + span { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); font-size: .82rem; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mon .screen { border-radius: 3px; outline: 3px solid var(--live); }
+.mon .screen.next { outline: 1px solid var(--line); }
+.ctl { display: grid; grid-template-columns: 1fr 1.4fr; gap: 6px; }
+.ctl3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.ctl3 button { display: grid; justify-items: center; gap: 2px; min-height: 58px; font-weight: 800; }
+.ctl3 button svg.i { width: 24px; height: 24px; }
+.ctl3 button[aria-pressed=true] { background: var(--live); color: var(--live-ink); border-color: var(--live); box-shadow: none; }
+.ctl3 button[aria-pressed=true] kbd { color: inherit; border-color: currentColor; }
+.keys { font-size: .76rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+#toast { position: fixed; left: 50%; top: 110px; transform: translateX(-50%); background: var(--accent); color: var(--accent-ink); padding: 10px 18px; border-radius: 6px; font-weight: 700; z-index: 40; max-width: calc(100vw - 32px); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+dialog { border: 1px solid var(--line); border-radius: 8px; padding: 0; width: min(680px, calc(100vw - 32px)); background: var(--panel); color: var(--ink); }
+dialog::backdrop { background: rgba(5, 7, 10, .6); }
+dialog form { padding: 16px; display: grid; gap: 10px; }
+dialog h2 { margin: 0; font-size: 1.2rem; font-weight: 800; }
+dialog .row { justify-content: flex-end; }
+table.keys-t { border-collapse: collapse; width: 100%; }
+table.keys-t td { padding: 5px 6px; border-bottom: 1px solid var(--line); }
+table.keys-t td:first-child { white-space: nowrap; width: 1%; }
+
+/* the slide itself: drawn at a fixed size (W x H) and scaled to fit wherever it is shown */
+.stage { position: absolute; left: 50%; top: 50%; transform-origin: center; overflow: hidden; background: #000; }
+.stage .bg, .stage .dim { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.stage .dim { background: #000; }
+.stage .box { position: absolute; left: 5%; right: 5%; top: 6%; bottom: 6%; display: flex; flex-direction: column; justify-content: center; line-height: 1.18; overflow-wrap: break-word; }
+.stage .ttl { font-weight: 700; font-size: 1.15em; margin-bottom: .35em; }
+.stage .body { white-space: pre-line; }
+.stage .body sup { font-size: .55em; opacity: .75; margin-right: .15em; }
+.stage .ref { font-size: .6em; opacity: .85; margin-top: .7em; font-weight: 700; }
+.stage .ref.top { margin: 0 0 .7em; order: -1; }
+.stage .wel { position: absolute; inset: 0; display: grid; justify-items: center; align-content: start; padding-top: 6%; text-align: center; color: #fff; font-family: Garamond, "EB Garamond", Georgia, serif; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-new" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M12 11v6M9 14h6"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM8 3v5h7V3M8 21v-7h8v7"/></symbol>
+  <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v11M7 9l5 5 5-5M4 16v4h16v-4"/></symbol>
+  <symbol id="i-song" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
+  <symbol id="i-hymn" viewBox="0 0 24 24"><path d="M3 5h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H3zM21 5h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></symbol>
+  <symbol id="i-scripture" viewBox="0 0 24 24"><path d="M5 4a1 1 0 0 1 1-1h13v18H6a1 1 0 0 1-1-1zM12 7v8M9 10h6"/></symbol>
+  <symbol id="i-slide" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M7 10h10M7 14h6"/></symbol>
+  <symbol id="i-welcome" viewBox="0 0 24 24"><path d="M12 2v5M10 4h4M5 21V11l7-4 7 4v10zM10 21v-5h4v5"/></symbol>
+  <symbol id="i-countdown" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></symbol>
+  <symbol id="i-projector" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-stage" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></symbol>
+  <symbol id="i-black" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 2v5M10 4h4M5 21V11l7-4 7 4v10zM10 21v-5h4v5"/></symbol>
+  <symbol id="i-hide" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1A10 10 0 0 1 12 6c5 0 9 6 9 6a17 17 0 0 1-3 3.5M6.6 6.6C4.3 8.1 3 12 3 12s4 6 9 6a9 9 0 0 0 4-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-look" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.7 1.5-1.5 0-1-.8-1.3-.8-2.2 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1" fill="currentColor"/><circle cx="10" cy="7" r="1" fill="currentColor"/><circle cx="14.5" cy="7" r="1" fill="currentColor"/></symbol>
+  <symbol id="i-slides" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1.5"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-keys" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="1.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-live" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></symbol>
+</svg>
+
+<div class="app">
+<nav class="menubar" aria-label="Menu">
+  <span class="brand"><svg class="i" aria-hidden="true"><use href="#i-live"/></svg> Sunday Live</span>
+  <div class="menu"><button type="button" aria-haspopup="true" aria-expanded="false">File</button>
+    <div class="drop" role="menu">
+      <button type="button" role="menuitem" data-cmd="new"><svg class="i" aria-hidden="true"><use href="#i-new"/></svg>New service<span></span></button>
+      <button type="button" role="menuitem" data-cmd="open"><svg class="i" aria-hidden="true"><use href="#i-open"/></svg>Open service…<kbd>Ctrl+O</kbd></button>
+      <button type="button" role="menuitem" data-cmd="save"><svg class="i" aria-hidden="true"><use href="#i-save"/></svg>Save service<kbd>Ctrl+S</kbd></button>
+      <hr>
+      <button type="button" role="menuitem" data-cmd="import"><svg class="i" aria-hidden="true"><use href="#i-import"/></svg>Bring in this week's songs from Sunday Slides<span></span></button>
+      <button type="button" role="menuitem" data-cmd="builder"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>Open the Sunday Slides builder<span></span></button>
+    </div></div>
+  <div class="menu"><button type="button" aria-haspopup="true" aria-expanded="false">Insert</button>
+    <div class="drop" role="menu">
+      <button type="button" role="menuitem" data-cmd="song"><svg class="i" aria-hidden="true"><use href="#i-song"/></svg>Song…<span></span></button>
+      <button type="button" role="menuitem" data-cmd="newsong"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg>Type in a new song…<span></span></button>
+      <button type="button" role="menuitem" data-cmd="hymn"><svg class="i" aria-hidden="true"><use href="#i-hymn"/></svg>Hymn from the book…<span></span></button>
+      <button type="button" role="menuitem" data-cmd="bible"><svg class="i" aria-hidden="true"><use href="#i-scripture"/></svg>Scripture…<span></span></button>
+      <button type="button" role="menuitem" data-cmd="slide"><svg class="i" aria-hidden="true"><use href="#i-slide"/></svg>Slide or announcement…<span></span></button>
+      <hr>
+      <button type="button" role="menuitem" data-cmd="welcome"><svg class="i" aria-hidden="true"><use href="#i-welcome"/></svg>Welcome slide (black + logo)<span></span></button>
+      <button type="button" role="menuitem" data-cmd="photo"><svg class="i" aria-hidden="true"><use href="#i-image"/></svg>Welcome slide (church photo)<span></span></button>
+      <button type="button" role="menuitem" data-cmd="blank"><svg class="i" aria-hidden="true"><use href="#i-black"/></svg>Black screen<span></span></button>
+      <button type="button" role="menuitem" data-cmd="countdown"><svg class="i" aria-hidden="true"><use href="#i-countdown"/></svg>Countdown to service…<span></span></button>
+    </div></div>
+  <div class="menu"><button type="button" aria-haspopup="true" aria-expanded="false">Live</button>
+    <div class="drop" role="menu">
+      <button type="button" role="menuitem" data-cmd="next"><svg class="i" aria-hidden="true"><use href="#i-next"/></svg>Next slide<kbd>→</kbd></button>
+      <button type="button" role="menuitem" data-cmd="prev"><svg class="i" aria-hidden="true"><use href="#i-prev"/></svg>Previous slide<kbd>←</kbd></button>
+      <button type="button" role="menuitem" data-cmd="vdown"><svg class="i" aria-hidden="true"><use href="#i-down"/></svg>Next verse<kbd>↓</kbd></button>
+      <button type="button" role="menuitem" data-cmd="vup"><svg class="i" aria-hidden="true"><use href="#i-up"/></svg>Verse before<kbd>↑</kbd></button>
+      <hr>
+      <button type="button" role="menuitem" data-cmd="black"><svg class="i" aria-hidden="true"><use href="#i-black"/></svg>Black screen<kbd>B</kbd></button>
+      <button type="button" role="menuitem" data-cmd="logo"><svg class="i" aria-hidden="true"><use href="#i-logo"/></svg>Logo<kbd>L</kbd></button>
+      <button type="button" role="menuitem" data-cmd="clear"><svg class="i" aria-hidden="true"><use href="#i-hide"/></svg>Hide words<kbd>C</kbd></button>
+      <hr>
+      <button type="button" role="menuitem" data-cmd="screen"><svg class="i" aria-hidden="true"><use href="#i-projector"/></svg>Open projector screen<span></span></button>
+      <button type="button" role="menuitem" data-cmd="stage"><svg class="i" aria-hidden="true"><use href="#i-stage"/></svg>Open stage view<span></span></button>
+    </div></div>
+  <div class="menu"><button type="button" aria-haspopup="true" aria-expanded="false">View</button>
+    <div class="drop" role="menu">
+      <button type="button" role="menuitem" data-cmd="theme"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span class="theme-name">Light mode</span><kbd>Ctrl+L</kbd></button>
+      <hr>
+      <button type="button" role="menuitem" data-cmd="shape43"><svg class="i" aria-hidden="true"><use href="#i-projector"/></svg>Screen shape 4:3<span></span></button>
+      <button type="button" role="menuitem" data-cmd="shape169"><svg class="i" aria-hidden="true"><use href="#i-projector"/></svg>Screen shape 16:9 (wide)<span></span></button>
+      <hr>
+      <button type="button" role="menuitem" data-cmd="look"><svg class="i" aria-hidden="true"><use href="#i-look"/></svg>Change the look…<span></span></button>
+    </div></div>
+  <div class="menu"><button type="button" aria-haspopup="true" aria-expanded="false">Help</button>
+    <div class="drop" role="menu">
+      <button type="button" role="menuitem" data-cmd="keys"><svg class="i" aria-hidden="true"><use href="#i-keys"/></svg>Keyboard shortcuts<kbd>?</kbd></button>
+    </div></div>
+  <span class="sp"></span>
+  <input type="text" id="svc-name" aria-label="Service name">
+  <input type="file" id="open-file" accept=".json,application/json" hidden>
+</nav>
+
+<div class="ribbon" role="toolbar" aria-label="Toolbar">
+  <div class="rgroup"><div class="btns">
+    <button type="button" class="rb go" id="btn-clear"><svg class="i" aria-hidden="true"><use href="#i-new"/></svg><span class="rl">New</span></button>
+    <button type="button" class="rb go" id="btn-open"><svg class="i" aria-hidden="true"><use href="#i-open"/></svg>Open</button>
+    <button type="button" class="rb go" id="btn-save"><svg class="i" aria-hidden="true"><use href="#i-save"/></svg>Save</button>
+    <button type="button" class="rb go" id="btn-import" title="Bring in this week's songs from Sunday Slides"><svg class="i" aria-hidden="true"><use href="#i-import"/></svg>From Slides</button>
+  </div><div class="glbl">Service</div></div>
+  <div class="rgroup"><div class="btns">
+    <button type="button" class="rb add" style="--c:var(--c-song)" data-cmd="song"><svg class="i" aria-hidden="true"><use href="#i-song"/></svg>Song</button>
+    <button type="button" class="rb add" style="--c:var(--c-hymn)" data-cmd="hymn"><svg class="i" aria-hidden="true"><use href="#i-hymn"/></svg>Hymn</button>
+    <button type="button" class="rb add" style="--c:var(--c-scripture)" data-cmd="bible"><svg class="i" aria-hidden="true"><use href="#i-scripture"/></svg>Scripture</button>
+    <button type="button" class="rb add" style="--c:var(--c-slide)" data-cmd="slide"><svg class="i" aria-hidden="true"><use href="#i-slide"/></svg>Slide</button>
+    <button type="button" class="rb add" style="--c:var(--c-welcome)" data-cmd="welcome"><svg class="i" aria-hidden="true"><use href="#i-welcome"/></svg>Welcome</button>
+    <button type="button" class="rb add" style="--c:var(--c-countdown)" data-cmd="countdown"><svg class="i" aria-hidden="true"><use href="#i-countdown"/></svg>Countdown</button>
+  </div><div class="glbl">Insert</div></div>
+  <div class="rgroup"><div class="btns">
+    <button type="button" class="rb go" id="btn-screen"><svg class="i" aria-hidden="true"><use href="#i-projector"/></svg>Projector</button>
+    <button type="button" class="rb go" id="btn-stage"><svg class="i" aria-hidden="true"><use href="#i-stage"/></svg>Stage view</button>
+  </div><div class="glbl">Output</div></div>
+  <div class="rgroup"><div class="btns">
+    <button type="button" class="rb" id="rb-black" data-cmd="black" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-black"/></svg>Black</button>
+    <button type="button" class="rb" id="rb-logo" data-cmd="logo" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-logo"/></svg>Logo</button>
+    <button type="button" class="rb" id="rb-clear" data-cmd="clear" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-hide"/></svg>Hide words</button>
+  </div><div class="glbl">Screen</div></div>
+  <div class="rgroup"><div class="btns">
+    <button type="button" class="rb go" data-cmd="look"><svg class="i" aria-hidden="true"><use href="#i-look"/></svg>Look</button>
+    <button type="button" class="rb go" data-cmd="theme" id="rb-theme"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span class="theme-name">Light mode</span></button>
+    <button type="button" class="rb go" data-cmd="keys"><svg class="i" aria-hidden="true"><use href="#i-keys"/></svg>Shortcuts</button>
+  </div><div class="glbl">View</div></div>
+</div>
+
+<main class="cols">
+  <section aria-labelledby="h-svc">
+    <div class="colhead"><h2 id="h-svc"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>Service order</h2><span class="count" id="svc-count"></span></div>
+    <div class="scroll"><ol class="svc" id="svc"></ol></div>
+    <div class="addrow">
+      <button type="button" data-go="songs" style="--c:var(--c-song)"><svg class="i" aria-hidden="true"><use href="#i-song"/></svg>Song</button>
+      <button type="button" data-go="bible" style="--c:var(--c-scripture)"><svg class="i" aria-hidden="true"><use href="#i-scripture"/></svg>Scripture</button>
+      <button type="button" data-go="make" style="--c:var(--c-slide)"><svg class="i" aria-hidden="true"><use href="#i-slide"/></svg>Slide</button>
+      <button type="button" id="add-welcome" style="--c:var(--c-welcome)"><svg class="i" aria-hidden="true"><use href="#i-welcome"/></svg>Welcome</button>
+    </div>
+  </section>
+
+  <section aria-label="Slides and library">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="slides"><svg class="i" aria-hidden="true"><use href="#i-slides"/></svg>Slides</button>
+      <button type="button" role="tab" data-tab="songs"><svg class="i" aria-hidden="true"><use href="#i-song"/></svg>Songs</button>
+      <button type="button" role="tab" data-tab="bible"><svg class="i" aria-hidden="true"><use href="#i-scripture"/></svg>Bible</button>
+      <button type="button" role="tab" data-tab="make"><svg class="i" aria-hidden="true"><use href="#i-slide"/></svg>Make a slide</button>
+      <button type="button" role="tab" data-tab="look"><svg class="i" aria-hidden="true"><use href="#i-look"/></svg>Look</button>
+    </div>
+
+    <div class="pane scroll" data-pane="slides">
+      <div class="row" style="margin-bottom:8px"><h3 class="grow" id="slides-title" style="margin:0"></h3><span id="slides-acts" class="row"></span></div>
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+
+    <div class="pane scroll" data-pane="songs">
+      <div class="split">
+        <div>
+          <div class="search"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="song-find" placeholder="Find a song by name or words" aria-label="Find a song"></div>
+          <div class="list" id="song-list" style="flex:1;min-height:240px"></div>
+          <div class="row">
+            <button type="button" id="song-new"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg>Type in a new song</button>
+            <button type="button" id="song-hymn"><svg class="i" aria-hidden="true"><use href="#i-hymn"/></svg>Hymn from the book</button>
+          </div>
+        </div>
+        <div>
+          <div class="row"><h3 class="grow" id="song-title" style="margin:0"></h3></div>
+          <div class="row" id="song-acts"></div>
+          <div class="thumbs" id="song-thumbs" style="overflow:auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane scroll" data-pane="bible">
+      <div class="split">
+        <div>
+          <div class="row">
+            <div class="search grow"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="ref" placeholder="John 3:16, Ps 23, 1 Cor 13:4-7, or words" aria-label="Find a verse" autocomplete="off"></div>
+          </div>
+          <div id="ref-out" style="display:grid;gap:8px"></div>
+          <div class="row">
+            <label>Bible <select id="tr"></select></label>
+            <label>Verses per slide <select id="vps"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+          </div>
+          <h3>Recent</h3>
+          <div class="chips" id="recent"></div>
+          <p class="hint" style="margin-top:8px">Click a verse to pick it, Shift+click to pick a range. Double-click shows it right away. While scripture is on the screen, <kbd>↑</kbd> <kbd>↓</kbd> move one verse up or down the passage.</p>
+        </div>
+        <div>
+          <div class="row">
+            <button type="button" class="small" id="ch-prev" aria-label="Previous chapter"><svg class="i" aria-hidden="true"><use href="#i-prev"/></svg></button>
+            <select id="book" aria-label="Book" class="grow"></select>
+            <select id="chap" aria-label="Chapter"></select>
+            <button type="button" class="small" id="ch-next" aria-label="Next chapter"><svg class="i" aria-hidden="true"><use href="#i-next"/></svg></button>
+          </div>
+          <div class="verses" id="verses" tabindex="0"></div>
+          <div class="row">
+            <span class="grow hint" id="pick-label"></span>
+            <button type="button" id="b-add"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add to service</button>
+            <button type="button" class="primary" id="b-show"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Show now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane scroll" data-pane="make">
+      <div class="lookgrid">
+        <div style="display:grid;gap:8px;align-content:start">
+          <h3>Words on the slide</h3>
+          <label for="m-title" style="font-weight:700">Heading (optional)</label>
+          <input type="text" id="m-title" placeholder="For example: Fellowship Lunch">
+          <label for="m-text" style="font-weight:700">Words</label>
+          <textarea id="m-text" style="min-height:140px" placeholder="For example: Everyone is welcome after the service today!"></textarea>
+          <h3>Background</h3>
+          <div class="swatches" id="m-bgs"></div>
+          <label class="check"><input type="checkbox" id="m-own" checked> Use the same look as other slides (see Look tab)</label>
+          <div class="row">
+            <button type="button" id="m-add"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg><span>Add to service</span></button>
+            <button type="button" class="primary" id="m-show"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Show now</button>
+          </div>
+          <h3>Ready-made</h3>
+          <div class="row">
+            <button type="button" data-ready="welcome">Welcome (black + logo)</button>
+            <button type="button" data-ready="photo">Welcome (church photo)</button>
+            <button type="button" data-ready="black">Black screen</button>
+          </div>
+          <div class="row">
+            <span>Countdown to service:</span>
+            <input type="time" id="cd-time" style="width:auto" aria-label="Service start time">
+            <button type="button" id="cd-add"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add</button>
+            <button type="button" id="cd-show"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Show now</button>
+          </div>
+        </div>
+        <div class="sticky" style="display:grid;gap:8px;align-content:start">
+          <h3>Preview</h3>
+          <div class="screen" id="m-preview"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane scroll" data-pane="look">
+      <div class="row" style="margin-bottom:10px">
+        <span style="font-weight:700">Change the look of:</span>
+        <span class="row" id="look-which"></span>
+      </div>
+      <div class="lookgrid">
+        <div style="display:grid;gap:4px;align-content:start">
+          <h3>Background</h3>
+          <div class="swatches" id="l-bgs"></div>
+          <div class="row" style="margin-top:6px"><button type="button" class="small" id="l-upload"><svg class="i" aria-hidden="true"><use href="#i-image"/></svg>Use my own picture</button><input type="file" id="l-file" accept="image/*" hidden></div>
+          <label for="l-dim">Darken the picture <span id="l-dim-v"></span></label>
+          <input type="range" id="l-dim" min="0" max="80" step="5">
+          <h3>Color of the words</h3>
+          <div class="swatches" id="l-colors"></div>
+          <h3>Letters</h3>
+          <div class="row" id="l-fonts"></div>
+          <label for="l-size">Largest size <span id="l-size-v"></span></label>
+          <input type="range" id="l-size" min="40" max="160" step="4">
+          <div class="row">
+            <label class="check"><input type="checkbox" id="l-bold"> Bold</label>
+            <label class="check"><input type="checkbox" id="l-shadow"> Shadow behind words</label>
+            <label class="check"><input type="checkbox" id="l-caps"> ALL CAPITALS</label>
+          </div>
+          <div class="row"><span>Line up words:</span><span class="row" id="l-align"></span></div>
+          <div class="row" id="l-refrow"><span>Verse name:</span><span class="row" id="l-refpos"></span><label class="check"><input type="checkbox" id="l-nums"> Verse numbers</label></div>
+          <h3>Screen</h3>
+          <div class="row"><span>Shape:</span><span class="row" id="l-shape"></span></div>
+          <label class="check"><input type="checkbox" id="l-fade"> Fade between slides</label>
+          <div class="row" style="margin-top:6px"><button type="button" class="small" id="l-reset">Put this look back the way it was</button></div>
+        </div>
+        <div class="sticky" style="display:grid;gap:8px;align-content:start">
+          <h3>Preview <span id="look-live-note" class="hint" style="text-transform:none;letter-spacing:0"></span></h3>
+          <div class="screen" id="l-preview"></div>
+          <p class="hint">Changes show on the projector right away.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="livecol" aria-labelledby="h-live">
+    <div class="colhead">
+      <h2 id="h-live"><svg class="i" aria-hidden="true"><use href="#i-projector"/></svg>Output</h2>
+      <span class="count" id="screen-status"></span>
+    </div>
+    <div class="scroll" style="padding:0">
+      <div class="mon">
+        <div class="lbl on"><span>● Live</span><span id="live-name"></span></div>
+        <div class="screen" id="mon-live"></div>
+        <div class="ctl">
+          <button type="button" class="big" id="go-prev"><svg class="i" aria-hidden="true"><use href="#i-prev"/></svg>Back</button>
+          <button type="button" class="big primary" id="go-next">Next<svg class="i" aria-hidden="true"><use href="#i-next"/></svg></button>
+        </div>
+        <div class="ctl3">
+          <button type="button" id="m-black" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-black"/></svg><span>Black <kbd>B</kbd></span></button>
+          <button type="button" id="m-logo" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-logo"/></svg><span>Logo <kbd>L</kbd></span></button>
+          <button type="button" id="m-clear" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-hide"/></svg><span>Hide words <kbd>C</kbd></span></button>
+        </div>
+        <div class="row" id="live-verse" hidden>
+          <button type="button" id="v-up" class="grow" aria-label="Verse before"><svg class="i" aria-hidden="true"><use href="#i-up"/></svg>Verse</button>
+          <button type="button" id="v-down" class="grow" aria-label="Next verse"><svg class="i" aria-hidden="true"><use href="#i-down"/></svg>Verse</button>
+          <select id="live-tr" aria-label="Bible for the verse on screen"></select>
+        </div>
+        <div class="lbl"><span>Up next</span><span id="next-name"></span></div>
+        <div class="screen next" id="mon-next"></div>
+        <div class="keys">
+          <span><kbd>→</kbd> <kbd>Space</kbd> next</span><span><kbd>←</kbd> back</span><span><kbd>↑</kbd><kbd>↓</kbd> verse</span>
+          <span><kbd>B</kbd> black</span><span><kbd>L</kbd> logo</span><span><kbd>C</kbd> hide words</span>
+        </div>
+              </div>
+    </div>
+  </section>
+</main>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <h2 id="dlg-title">Change the words</h2>
+    <label for="dlg-name" style="font-weight:700">Song name</label>
+    <input type="text" id="dlg-name">
+    <div id="dlg-words-wrap" style="display:grid;gap:6px">
+      <label for="dlg-words" style="font-weight:700">Words</label>
+      <p class="hint">Leave one empty line where you want a new slide to start.</p>
+      <textarea id="dlg-words"></textarea>
+    </div>
+    <div class="row">
+      <button type="button" id="dlg-cancel">Cancel</button>
+      <button type="button" class="primary" id="dlg-save">Save</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="ask">
+  <form method="dialog">
+    <h2 id="ask-title"></h2>
+    <p id="ask-text" class="hint" style="font-size:.95rem"></p>
+    <div class="row">
+      <button type="submit" value="no">Cancel</button>
+      <button type="submit" value="yes" class="primary" id="ask-yes"></button>
+    </div>
+  </form>
+</dialog>
+<dialog id="help">
+  <form method="dialog">
+    <h2>Keyboard shortcuts</h2>
+    <table class="keys-t">
+      <tr><td><kbd>→</kbd> <kbd>Space</kbd> <kbd>Page Down</kbd></td><td>Next slide (a presentation clicker works too)</td></tr>
+      <tr><td><kbd>←</kbd> <kbd>Page Up</kbd></td><td>Previous slide</td></tr>
+      <tr><td><kbd>↓</kbd> <kbd>↑</kbd></td><td>Next verse / verse before, while scripture is on the screen</td></tr>
+      <tr><td><kbd>B</kbd></td><td>Black screen (press again to bring the slide back)</td></tr>
+      <tr><td><kbd>L</kbd></td><td>Logo screen</td></tr>
+      <tr><td><kbd>C</kbd></td><td>Hide the words but keep the background</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Back to the slide from black, logo or hidden words</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Save / open a service</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Switch between dark and light mode</td></tr>
+      <tr><td>In the Bible box</td><td><kbd>Enter</kbd> shows the verse, <kbd>Shift</kbd>+<kbd>Enter</kbd> adds it to the service</td></tr>
+    </table>
+    <div class="row"><button type="submit" class="primary">Close</button></div>
+  </form>
+</dialog>
+<div id="toast" role="status" hidden></div>
+
+<script>
+const BUILTIN = /*SONGS*/;
+const IMG = /*IMAGES*/;
+const BIBLE_DATA = /*BIBLES*/;
+
+/* ---------- storage (song keys are shared with the Sunday Slides builder) ---------- */
+const KEY_LIB = "sundaySlides.songs.v1", KEY_WEEK = "sundaySlides.week.v1";
+const KEY_SVC = "sundayLive.service.v1", KEY_LOOK = "sundayLive.look.v1", KEY_PICS = "sundayLive.pictures.v1", KEY_RECENT = "sundayLive.recent.v1";
+function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+const $ = id => document.getElementById(id);
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const k in attrs || {}) {
+    if (k === "on") for (const ev in attrs.on) n.addEventListener(ev, attrs.on[ev]);
+    else if (k === "text") n.textContent = attrs.text;
+    else if (attrs[k] !== false && attrs[k] != null) n.setAttribute(k, attrs[k]);
+  }
+  for (const c of kids) if (c != null) n.append(c);
+  return n;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+let toastT;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+
+/* ---------- songs ---------- */
+function customLib() { return load(KEY_LIB, { edits: {}, added: [], removed: [] }); }
+function library() {
+  const custom = customLib(), list = [];
+  BUILTIN.forEach((b, i) => {
+    const id = "b" + i;
+    if (custom.removed.includes(id)) return;
+    list.push(Object.assign({ id }, b, custom.edits[id] || {}));
+  });
+  custom.added.forEach(a => { if (!custom.removed.includes(a.id)) list.push(a); });
+  return list.sort((a, b) => a.t.toLowerCase().localeCompare(b.t.toLowerCase()));
+}
+function songById(id) { return library().find(s => s.id === id); }
+
+/* ---------- Bible ---------- */
+const BOOKS = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
+const ALIASES = { gen: 0, gn: 0, ex: 1, exo: 1, lev: 2, lv: 2, num: 3, nm: 3, deut: 4, dt: 4, josh: 5, jos: 5, judg: 6, jdg: 6, jg: 6, rth: 7, ru: 7, "1sam": 8, "1sa": 8, "2sam": 9, "2sa": 9, "1kgs": 10, "1ki": 10, "1k": 10, "2kgs": 11, "2ki": 11, "2k": 11, "1chr": 12, "1ch": 12, "2chr": 13, "2ch": 13, ezr: 14, neh: 15, est: 16, jb: 17, ps: 18, psa: 18, psalm: 18, pslm: 18, pss: 18, prov: 19, pr: 19, prv: 19, eccl: 20, ecc: 20, qoh: 20, song: 21, sos: 21, songofsongs: 21, ss: 21, canticles: 21, isa: 22, is: 22, jer: 23, lam: 24, ezek: 25, eze: 25, ezk: 25, dan: 26, dn: 26, hos: 27, jl: 28, am: 29, obad: 30, ob: 30, jon: 31, jnh: 31, mic: 32, nah: 33, hab: 34, zeph: 35, zep: 35, hag: 36, zech: 37, zec: 37, mal: 38, mt: 39, matt: 39, mk: 40, mrk: 40, lk: 41, luk: 41, jn: 42, jhn: 42, joh: 42, ac: 43, rom: 44, rm: 44, "1cor": 45, "1co": 45, "2cor": 46, "2co": 46, gal: 47, eph: 48, phil: 49, php: 49, pp: 49, col: 50, "1thess": 51, "1th": 51, "2thess": 52, "2th": 52, "1tim": 53, "1ti": 53, "2tim": 54, "2ti": 54, tit: 55, phlm: 56, phm: 56, philem: 56, heb: 57, jas: 58, jm: 58, "1pet": 59, "1pe": 59, "1pt": 59, "2pet": 60, "2pe": 60, "2pt": 60, "1jn": 61, "1jo": 61, "1jhn": 61, "2jn": 62, "2jo": 62, "3jn": 63, "3jo": 63, jud: 64, jude: 64, rev: 65, re: 65, rv: 65, revelations: 65 };
+const ONE_CHAPTER = new Set([30, 56, 62, 63, 64]);
+const TRANSLATIONS = { KJV: "King James Version", BSB: "Berean Standard Bible" };
+const bibles = {};
+let bibleReady = Promise.resolve();
+async function loadBibles() {
+  for (const code in BIBLE_DATA) {
+    const bytes = Uint8Array.from(atob(BIBLE_DATA[code]), c => c.charCodeAt(0));
+    const text = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+    bibles[code] = JSON.parse(text);
+  }
+}
+function bookIndex(name) {
+  let k = name.toLowerCase().replace(/[^a-z0-9]/g, "")
+    .replace(/^(third|iii)(?=[a-z]{2})/, "3").replace(/^(second|ii)(?=[a-z]{2})/, "2").replace(/^(first|i)(?=[a-z]{2})/, "1");
+  if (k === "") return -1;
+  if (k in ALIASES) return ALIASES[k];
+  const norm = BOOKS.map(b => b.toLowerCase().replace(/[^a-z0-9]/g, ""));
+  let i = norm.indexOf(k); if (i >= 0) return i;
+  i = norm.findIndex(b => b.startsWith(k));
+  return i;
+}
+// "John 3:16-18", "Ps 23", "1 cor 13:4-7", "Rom 8:38-9:2", "Jude 3", "jn 3 16"
+function parseRef(q) {
+  const m = q.trim().match(/^([1-3]?\s*[a-zA-Z][a-zA-Z .]*?)\s*(\d+)?(?:\s*[:.\s]\s*(\d+))?(?:\s*[-–]\s*(\d+)(?:\s*[:.]\s*(\d+))?)?\s*$/);
+  if (!m) return null;
+  const b = bookIndex(m[1]); if (b < 0) return null;
+  const B = bibles.KJV || Object.values(bibles)[0]; if (!B) return null;
+  let c = m[2] ? +m[2] : 1, v = m[3] ? +m[3] : 0, c2, v2;
+  if (ONE_CHAPTER.has(b) && m[2] && !m[3]) { v = c; c = 1; if (m[4] && !m[5]) { c2 = 1; v2 = +m[4]; } }
+  if (c < 1 || c > B[b].length) return null;
+  if (c2 == null) {
+    if (m[4] && m[5]) { c2 = +m[4]; v2 = +m[5]; }
+    else if (m[4]) { if (v) { c2 = c; v2 = +m[4]; } else { c2 = +m[4]; v2 = 0; } }
+    else { c2 = c; v2 = v; }
+  }
+  if (!v) v = 1;
+  c2 = Math.min(Math.max(c2, c), B[b].length);
+  if (!v2) v2 = B[b][c2 - 1].length;
+  v = Math.min(v, B[b][c - 1].length); v2 = Math.min(v2, B[b][c2 - 1].length);
+  if (c2 === c && v2 < v) v2 = v;
+  return { b, c, v, c2, v2 };
+}
+function refText(p) {
+  const name = BOOKS[p.b], one = ONE_CHAPTER.has(p.b);
+  const start = one ? "" + p.v : p.c + ":" + p.v;
+  const B = bibles.KJV;
+  if (!one && B && p.c === p.c2 && p.v === 1 && p.v2 === B[p.b][p.c - 1].length) return name + " " + p.c;
+  if (p.c === p.c2 && p.v === p.v2) return name + " " + start;
+  if (p.c === p.c2) return name + " " + start + "–" + p.v2;
+  return name + " " + start + "–" + p.c2 + ":" + p.v2;
+}
+function versesOf(tr, p) {
+  const B = bibles[tr] || bibles.KJV, out = [];
+  if (!B) return out; // still loading
+  let c = p.c, v = p.v;
+  while (c < p.c2 || (c === p.c2 && v <= p.v2)) {
+    const ch = B[p.b][c - 1];
+    if (v > ch.length) { c++; v = 1; continue; }
+    out.push({ c, v, t: ch[v - 1] });
+    v++;
+  }
+  return out;
+}
+function stepVerse(b, c, v, d) {
+  const B = bibles.KJV;
+  v += d;
+  if (v < 1) { c--; if (c < 1) { b--; if (b < 0) return null; c = B[b].length; } v = B[b][c - 1].length; }
+  else if (v > B[b][c - 1].length) { c++; v = 1; if (c > B[b].length) { b++; if (b > 65) return null; c = 1; } }
+  return { b, c, v };
+}
+
+/* ---------- looks ---------- */
+const BGS = [
+  { id: "alt", name: "B/W", css: "linear-gradient(135deg,#000 50%,#fff 50%)", songsOnly: true },
+  { id: "c:#000000", css: "#000" }, { id: "c:#ffffff", css: "#fff" }, { id: "c:#17365d", css: "#17365d" },
+  { id: "c:#1e4d2b", css: "#1e4d2b" }, { id: "c:#5b1a1a", css: "#5b1a1a" }, { id: "c:#3b2459", css: "#3b2459" },
+  { id: "g:night", css: "linear-gradient(160deg,#0f2027,#203a43 55%,#2c5364)" },
+  { id: "g:royal", css: "linear-gradient(160deg,#141e30,#243b55)" },
+  { id: "g:plum", css: "linear-gradient(160deg,#2b1036,#5b2a5e)" },
+  { id: "g:forest", css: "linear-gradient(160deg,#0b2e22,#1e5631)" },
+  { id: "g:ember", css: "linear-gradient(160deg,#2c1210,#7a2e1d)" },
+  { id: "g:dawn", css: "linear-gradient(170deg,#1c2541,#5c4a72 55%,#b5838d)" },
+  { id: "i:welcomeBg" }, { id: "i:church" }
+];
+const TEXT_COLORS = ["auto", "#ffffff", "#000000", "#fff4d6", "#f5d36b", "#bfe3ff"];
+const FONTS = ["Arial", "Calibri", "Georgia", "Verdana", "Garamond", "Trebuchet MS", "Times New Roman"];
+const LOOK_DEFAULTS = {
+  song: { bg: "alt", dim: 0, color: "auto", font: "Arial", size: 96, bold: false, shadow: false, caps: false, align: "center" },
+  scripture: { bg: "g:night", dim: 35, color: "#ffffff", font: "Georgia", size: 84, bold: false, shadow: true, caps: false, align: "center", refPos: "bottom", nums: true },
+  slide: { bg: "i:welcomeBg", dim: 20, color: "#ffffff", font: "Georgia", size: 80, bold: false, shadow: true, caps: false, align: "center" }
+};
+const LOOK_NAMES = { song: "Songs", scripture: "Scripture", slide: "Other slides" };
+let look = load(KEY_LOOK, {});
+for (const k in LOOK_DEFAULTS) look[k] = Object.assign({}, LOOK_DEFAULTS[k], look[k]);
+look.shape = look.shape || "4:3"; if (look.fade == null) look.fade = true;
+let pictures = load(KEY_PICS, []); // [{id, data}]
+function picData(id) {
+  if (IMG[id]) return IMG[id];
+  const p = pictures.find(x => x.id === id); return p ? p.data : null;
+}
+function saveLook() { save(KEY_LOOK, look); }
+const W = 1600;
+function H() { const [a, b] = look.shape.split(":").map(Number); return Math.round(W * b / a); }
+function bgFor(bgId, ordinal) {
+  if (bgId === "alt") return { css: ordinal % 2 ? "#ffffff" : "#000000", light: !!(ordinal % 2) };
+  if (bgId.startsWith("c:")) { const hex = bgId.slice(2); return { css: hex, light: luminance(hex) > 0.55 }; }
+  if (bgId.startsWith("g:")) { const g = BGS.find(b => b.id === bgId); return { css: g ? g.css : "#000", light: false }; }
+  if (bgId.startsWith("i:")) return { img: picData(bgId.slice(2)), css: "#000", light: false };
+  return { css: "#000", light: false };
+}
+function luminance(hex) { const n = parseInt(hex.replace("#", ""), 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; }
+
+/* ---------- service ---------- */
+function today() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function nextSunday() { const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7)); return (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear(); }
+let svc = load(KEY_SVC, null) || { name: "Sunday " + nextSunday(), items: [] };
+let uid = Date.now();
+function newId() { return "i" + (uid++).toString(36); }
+function persist() { if (!save(KEY_SVC, svc)) toast("This browser is out of room, so the service could not be saved. Try fewer pictures."); }
+function itemTitle(it) {
+  if (it.type === "song" || it.type === "hymn") return it.t;
+  if (it.type === "scripture") return refText(it) + " (" + it.tr + ")";
+  if (it.type === "slide") return it.title || (it.text || "").split("\n")[0] || "Slide";
+  if (it.type === "welcome") return { welcome: "Welcome (black + logo)", photo: "Welcome (church photo)", black: "Black screen" }[it.style];
+  if (it.type === "countdown") return "Countdown to " + fmtTime(it.time);
+  return "?";
+}
+const ICONS = { song: "song", hymn: "hymn", scripture: "scripture", slide: "slide", welcome: "welcome", countdown: "countdown" };
+const SVGNS = "http://www.w3.org/2000/svg";
+function ico(name) {
+  const svg = document.createElementNS(SVGNS, "svg"), use = document.createElementNS(SVGNS, "use");
+  svg.setAttribute("class", "i"); svg.setAttribute("aria-hidden", "true"); use.setAttribute("href", "#i-" + name);
+  svg.append(use); return svg;
+}
+function fmtTime(t) { if (!t) return ""; const [h, m] = t.split(":").map(Number); return ((h + 11) % 12 + 1) + ":" + String(m).padStart(2, "0") + (h < 12 ? " am" : " pm"); }
+
+// Every slide is a plain object the painter understands: {kind, look, ordinal, body|html, title, ref, ...}
+function songOrdinal(idx) { let n = 0; for (let i = 0; i < idx; i++) if (svc.items[i].type === "song" || svc.items[i].type === "hymn") n++; return n; }
+function scriptureSlides(it, ordinal) {
+  const vs = versesOf(it.tr, it).filter(x => x.t);
+  const per = +it.vps || 1, out = [];
+  for (let i = 0; i < vs.length; i += per) {
+    const grp = vs.slice(i, i + per), a = grp[0], z = grp[grp.length - 1];
+    const sub = { b: it.b, c: a.c, v: a.v, c2: z.c, v2: z.v };
+    out.push({ kind: "scripture", look: "scripture", ordinal, verses: grp, ref: refText(sub) + " " + it.tr, pos: sub, tr: it.tr, label: refText(sub) });
+  }
+  return out.length ? out : [{ kind: "scripture", look: "scripture", ordinal, verses: [], ref: refText(it), pos: it, tr: it.tr, label: refText(it) }];
+}
+function itemSlides(it, idx) {
+  const ordinal = idx == null ? 0 : songOrdinal(idx);
+  if (it.type === "song") return it.s.map((s, i) => ({ kind: "text", look: "song", ordinal, body: s, label: (i + 1) + "" }));
+  if (it.type === "hymn") return [{ kind: "text", look: "song", ordinal, body: it.s[0] || it.t, label: "Title" }];
+  if (it.type === "scripture") return scriptureSlides(it, ordinal);
+  if (it.type === "slide") return [{ kind: "text", look: "slide", ordinal: 0, title: it.title, body: it.text, bg: it.bg, label: "Slide" }];
+  if (it.type === "welcome") return [{ kind: it.style, label: itemTitle(it) }];
+  if (it.type === "countdown") return [{ kind: "countdown", time: it.time, label: "Countdown" }];
+  return [];
+}
+
+/* ---------- painting a slide ---------- */
+const fitCache = new Map();
+let measureStage = null;
+function slideHtml(sl, lk) {
+  if (sl.kind === "scripture") {
+    const nums = lk.nums && sl.verses.length > 1;
+    return sl.verses.map(x => (nums ? "<sup>" + x.v + "</sup>" : "") + esc(x.t)).join(" ");
+  }
+  return esc(sl.body || "");
+}
+function buildBox(doc, sl, lk) {
+  const box = doc.createElement("div"); box.className = "box";
+  box.style.textAlign = lk.align; box.style.fontFamily = '"' + lk.font + '", Arial, sans-serif';
+  box.style.fontWeight = lk.bold ? "700" : "400";
+  if (lk.caps) box.style.textTransform = "uppercase";
+  if (sl.title) { const t = doc.createElement("div"); t.className = "ttl"; t.textContent = sl.title; box.append(t); }
+  const b = doc.createElement("div"); b.className = "body"; b.innerHTML = slideHtml(sl, lk); box.append(b);
+  if (sl.kind === "scripture" && lk.refPos !== "none") { const r = doc.createElement("div"); r.className = "ref" + (lk.refPos === "top" ? " top" : ""); r.textContent = sl.ref; box.append(r); }
+  return box;
+}
+function fitSize(sl, lk) {
+  const key = JSON.stringify([sl.title, sl.body, sl.ref, sl.verses && sl.verses.map(v => v.t), lk.font, lk.bold, lk.caps, lk.size, lk.nums, lk.refPos, look.shape]);
+  if (fitCache.has(key)) return fitCache.get(key);
+  if (!measureStage) {
+    measureStage = el("div", { class: "stage", style: "visibility:hidden;left:-99999px;top:0;transform:none" });
+    document.body.append(measureStage);
+  }
+  measureStage.style.width = W + "px"; measureStage.style.height = H() + "px";
+  measureStage.innerHTML = ""; const box = buildBox(document, sl, lk); measureStage.append(box);
+  const fits = px => { box.style.fontSize = px + "px"; return box.scrollHeight <= box.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1; };
+  let lo = 24, hi = Math.round(lk.size * 1.333), best = lo;
+  if (fits(hi)) best = hi;
+  else while (lo <= hi) { const mid = (lo + hi) >> 1; if (fits(mid)) { best = mid; lo = mid + 1; } else hi = mid - 1; }
+  fitCache.set(key, best);
+  return best;
+}
+// Draws `sl` into `host` (a .screen element in any window). mode: "" | "black" | "logo" | "clear"
+function paint(host, sl, mode, opts) {
+  opts = opts || {};
+  const doc = host.ownerDocument, h = H();
+  const st = doc.createElement("div"); st.className = "stage";
+  st.style.width = W + "px"; st.style.height = h + "px";
+  const k = Math.min(host.clientWidth / W, host.clientHeight / h) || 0.1;
+  st.style.transform = "translate(-50%,-50%) scale(" + k + ")";
+  const kind = mode === "black" ? "black" : mode === "logo" ? "welcome" : sl ? sl.kind : "black";
+  if (kind === "welcome" || kind === "photo") paintWelcome(doc, st, kind);
+  else if (kind === "countdown") paintCountdown(doc, st, sl.time);
+  else if (kind === "text" || kind === "scripture") {
+    const lk = look[sl.look];
+    const bg = bgFor(sl.look === "slide" && sl.bg ? sl.bg : lk.bg, sl.ordinal || 0);
+    const bgEl = doc.createElement("div"); bgEl.className = "bg"; bgEl.style.background = bg.css;
+    if (bg.img) { bgEl.style.backgroundImage = "url(" + bg.img + ")"; bgEl.style.backgroundSize = "cover"; bgEl.style.backgroundPosition = "center"; }
+    st.append(bgEl);
+    if (bg.img && lk.dim) { const d = doc.createElement("div"); d.className = "dim"; d.style.opacity = lk.dim / 100; st.append(d); }
+    if (mode !== "clear") {
+      const box = buildBox(doc, sl, lk);
+      box.style.fontSize = fitSize(sl, lk) + "px";
+      box.style.color = lk.color === "auto" ? (bg.light ? "#000" : "#fff") : lk.color;
+      if (lk.shadow) box.style.textShadow = "0 4px 14px rgba(0,0,0,.85), 0 0 3px rgba(0,0,0,.9)";
+      st.append(box);
+    }
+  }
+  const old = [...host.querySelectorAll(":scope > .stage")];
+  if (opts.fade && old.length) {
+    st.style.opacity = "0"; st.style.transition = "opacity .45s ease";
+    host.append(st);
+    requestAnimationFrame(() => requestAnimationFrame(() => { st.style.opacity = "1"; }));
+    setTimeout(() => old.forEach(o => o.remove()), 500);
+  } else { old.forEach(o => o.remove()); host.append(st); }
+}
+function paintWelcome(doc, st, kind) {
+  const h = H(), wel = doc.createElement("div"); wel.className = "wel";
+  if (kind === "photo") {
+    st.style.background = "#000 url(" + IMG.church + ") center/cover";
+    wel.innerHTML = '<div style="font-family:Calibri,Arial,sans-serif;font-weight:700;font-size:86px;line-height:1.05;width:40%">Dorchester Immanuel</div>';
+    const logo = doc.createElement("img"); logo.src = IMG.logoWhite; logo.style.cssText = "width:52%;margin-top:-1%";
+    wel.append(logo);
+  } else {
+    st.style.background = "#333 url(" + IMG.welcomeBg + ") center/cover";
+    wel.innerHTML = '<div style="font-size:' + Math.round(h * .118) + 'px;line-height:1.1">WELCOME</div><div style="font-size:' + Math.round(h * .097) + 'px;line-height:1.1">TO</div><div style="font-size:' + Math.round(h * .097) + 'px;line-height:1.1">DORCHESTER IMMANUEL</div>';
+    const logo = doc.createElement("img"); logo.src = IMG.logo; logo.style.cssText = "height:" + Math.round(h * .34) + "px;margin-top:" + Math.round(h * .07) + "px";
+    wel.append(logo);
+  }
+  st.append(wel);
+}
+function countdownText(time) {
+  if (!time) return "";
+  const [hh, mm] = time.split(":").map(Number), t = new Date(); t.setHours(hh, mm, 0, 0);
+  const s = Math.round((t - Date.now()) / 1000);
+  if (s <= 0) return "Welcome!";
+  const m = Math.floor(s / 60), sec = s % 60;
+  return (m >= 60 ? Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0") : m) + ":" + String(sec).padStart(2, "0");
+}
+function paintCountdown(doc, st, time) {
+  st.style.background = "#333 url(" + IMG.welcomeBg + ") center/cover";
+  const wel = doc.createElement("div"); wel.className = "wel"; wel.style.alignContent = "center"; wel.style.paddingTop = "0";
+  wel.innerHTML = '<div style="font-size:90px">Our service begins in</div><div class="cd" data-time="' + esc(time || "") + '" style="font-family:Arial,sans-serif;font-weight:700;font-size:260px;line-height:1.1;font-variant-numeric:tabular-nums">' + esc(countdownText(time)) + "</div>";
+  st.append(wel);
+}
+function rescale(host) {
+  const h = H(), k = Math.min(host.clientWidth / W, host.clientHeight / h) || 0.1;
+  host.querySelectorAll(":scope > .stage").forEach(s => s.style.transform = "translate(-50%,-50%) scale(" + k + ")");
+}
+function sizeScreen(host) { host.style.aspectRatio = look.shape.replace(":", " / "); }
+
+/* ---------- live state ---------- */
+// live = {i, s} for a slide in the service order, or {direct: slide} for something shown straight from the library.
+let live = null, mode = "", sel = 0, tab = "slides";
+function liveSlide() {
+  if (!live) return null;
+  if (live.direct) return live.direct;
+  const it = svc.items[live.i]; if (!it) return null;
+  return itemSlides(it, live.i)[live.s] || null;
+}
+function nextPos() {
+  if (!live || live.direct) return null;
+  const it = svc.items[live.i]; if (!it) return null;
+  if (live.s + 1 < itemSlides(it, live.i).length) return { i: live.i, s: live.s + 1 };
+  if (live.i + 1 < svc.items.length) return { i: live.i + 1, s: 0 };
+  return null;
+}
+function prevPos() {
+  if (!live || live.direct) return null;
+  if (live.s > 0) return { i: live.i, s: live.s - 1 };
+  if (live.i > 0) { const n = itemSlides(svc.items[live.i - 1], live.i - 1).length; return { i: live.i - 1, s: n - 1 }; }
+  return null;
+}
+function goLive(pos, keepMode) {
+  live = pos; if (!keepMode && mode !== "black") mode = mode === "clear" ? "clear" : "";
+  if (mode === "logo") mode = "";
+  if (pos && !pos.direct) { sel = pos.i; }
+  updateLive(true);
+}
+function goNext() {
+  if (live && live.direct && live.direct.kind === "scripture") return verseStep(1);
+  const n = nextPos();
+  if (n) goLive(n); else if (!live && svc.items.length) goLive({ i: sel, s: 0 });
+}
+function goPrev() {
+  if (live && live.direct && live.direct.kind === "scripture") return verseStep(-1);
+  const p = prevPos(); if (p) goLive(p);
+}
+function verseStep(d) {
+  const sl = liveSlide();
+  if (!sl || sl.kind !== "scripture") return d > 0 ? goNext() : goPrev();
+  const p = sl.pos, from = d > 0 ? { b: p.b, c: p.c2, v: p.v2 } : { b: p.b, c: p.c, v: p.v };
+  let n = stepVerse(from.b, from.c, from.v, d);
+  while (n && !(bibles[sl.tr] || bibles.KJV)[n.b][n.c - 1][n.v - 1]) n = stepVerse(n.b, n.c, n.v, d);
+  if (!n) return;
+  showVerseDirect(sl.tr, { b: n.b, c: n.c, v: n.v, c2: n.c, v2: n.v }, true);
+}
+function nextVerse(sl) {
+  const B = bibles[sl.tr] || bibles.KJV;
+  let n = stepVerse(sl.pos.b, sl.pos.c2, sl.pos.v2, 1);
+  while (n && !B[n.b][n.c - 1][n.v - 1]) n = stepVerse(n.b, n.c, n.v, 1);
+  return n && directVerse(sl.tr, { b: n.b, c: n.c, v: n.v, c2: n.c, v2: n.v });
+}
+function directVerse(tr, p) {
+  const verses = versesOf(tr, p).filter(x => x.t);
+  return { kind: "scripture", look: "scripture", ordinal: 0, verses, ref: refText(p) + " " + tr, pos: p, tr, label: refText(p) };
+}
+function showVerseDirect(tr, p, stepping) {
+  goLive({ direct: directVerse(tr, p) });
+  if (bibleView.b !== p.b || bibleView.c !== p.c) { bibleView.b = p.b; bibleView.c = p.c; renderChapter(); }
+  else markLiveVerses();
+  scrollToVerse(p.v);
+  if (!stepping) addRecent(p);
+}
+function setMode(m) { mode = mode === m ? "" : m; updateLive(true); }
+
+/* ---------- output windows ---------- */
+let screenWin = null, stageWin = null;
+const SCREEN_DOC = '<!doctype html><html><head><meta charset="utf-8"><title>Sunday Live – Projector</title><style>' +
+  'html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none}#host{position:fixed;inset:0;overflow:hidden}' +
+  '.stage{position:absolute;left:50%;top:50%;transform-origin:center;overflow:hidden;background:#000}.stage .bg,.stage .dim{position:absolute;inset:0;background-size:cover;background-position:center}.stage .dim{background:#000}' +
+  '.stage .box{position:absolute;left:5%;right:5%;top:6%;bottom:6%;display:flex;flex-direction:column;justify-content:center;line-height:1.18;overflow-wrap:break-word}.stage .ttl{font-weight:700;font-size:1.15em;margin-bottom:.35em}.stage .body{white-space:pre-line}.stage .body sup{font-size:.55em;opacity:.75;margin-right:.15em}.stage .ref{font-size:.6em;opacity:.85;margin-top:.7em;font-weight:700}.stage .ref.top{margin:0 0 .7em;order:-1}' +
+  '.stage .wel{position:absolute;inset:0;display:grid;justify-items:center;align-content:start;padding-top:6%;text-align:center;color:#fff;font-family:Garamond,"EB Garamond",Georgia,serif}' +
+  '#hint{position:fixed;left:50%;top:24px;transform:translateX(-50%);background:rgba(255,255,255,.92);color:#111;font:18px/1.4 Arial,sans-serif;padding:12px 18px;border-radius:10px;z-index:9;text-align:center;cursor:default}' +
+  '</style></head><body><div id="host"></div><div id="hint" onclick="this.style.display=\'none\'">Drag this window onto the projector, then <b>double-click</b> it to fill the screen.<br>Press <b>Esc</b> to shrink it again.</div><script>' +
+  'document.addEventListener("dblclick",function(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(function(){});});' +
+  'setTimeout(function(){document.getElementById("hint").style.display="none";},15000);' +
+  'document.addEventListener("fullscreenchange",function(){document.getElementById("hint").style.display=document.fullscreenElement?"none":"";});' +
+  'document.addEventListener("keydown",function(e){if(window.opener)window.opener.postMessage({sundayLiveKey:e.key},"*");if([" ","ArrowUp","ArrowDown","PageUp","PageDown"].indexOf(e.key)>=0)e.preventDefault();});' +
+  'window.addEventListener("resize",function(){if(window.opener)window.opener.postMessage({sundayLiveResize:1},"*");});' +
+  '<\/script></body></html>';
+const STAGE_DOC = '<!doctype html><html><head><meta charset="utf-8"><title>Sunday Live – Stage view</title><style>' +
+  'html,body{margin:0;height:100%;background:#000;color:#fff;font-family:Arial,sans-serif}body{display:grid;grid-template-rows:auto 1fr auto;gap:2vh;padding:2vh 3vw;box-sizing:border-box}' +
+  '#top{display:flex;justify-content:space-between;font-size:5vh;font-weight:700}#clock{font-variant-numeric:tabular-nums}#now{font-size:7vh;line-height:1.2;white-space:pre-line;overflow:hidden}' +
+  '#next{font-size:4.5vh;line-height:1.2;color:#f5d36b;white-space:pre-line;border-top:2px solid #444;padding-top:1.5vh;max-height:30vh;overflow:hidden}#next:before{content:"NEXT: ";font-weight:700;color:#888}' +
+  '</style></head><body><div id="top"><span id="name"></span><span id="clock"></span></div><div id="now"></div><div id="next"></div><script>' +
+  'function tick(){var d=new Date();document.getElementById("clock").textContent=d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});}tick();setInterval(tick,1000);' +
+  'document.addEventListener("dblclick",function(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(function(){});});' +
+  '<\/script></body></html>';
+function ensureDoc(w, html, marker) {
+  try { if (!w.document.getElementById(marker)) { w.document.open(); w.document.write(html); w.document.close(); } return true; }
+  catch (e) { return false; }
+}
+async function openScreen() {
+  let feat = "popup,width=1024,height=" + Math.round(1024 * H() / W);
+  try {
+    if ("getScreenDetails" in window) {
+      const sd = await window.getScreenDetails();
+      const other = sd.screens.find(s => s !== sd.currentScreen);
+      if (other) feat = "popup,left=" + other.availLeft + ",top=" + other.availTop + ",width=" + other.availWidth + ",height=" + other.availHeight;
+    }
+  } catch (e) {}
+  screenWin = window.open("", "sundayLiveScreen", feat);
+  if (!screenWin) { toast("The browser blocked the projector window. Allow pop-ups for this page, then try again."); return; }
+  ensureDoc(screenWin, SCREEN_DOC, "host");
+  screenWin.focus();
+  try { sessionStorage.setItem("sundayLive.screen", "1"); } catch (e) {}
+  updateLive(false);
+}
+function openStage() {
+  stageWin = window.open("", "sundayLiveStage", "popup,width=900,height=600");
+  if (!stageWin) { toast("The browser blocked the stage window. Allow pop-ups for this page, then try again."); return; }
+  ensureDoc(stageWin, STAGE_DOC, "now");
+  updateLive(false);
+}
+// Reconnect to windows left open from before a reload.
+function reattach() {
+  try { if (!sessionStorage.getItem("sundayLive.screen")) return; sessionStorage.removeItem("sundayLive.screen"); } catch (e) { return; }
+  try { const w = window.open("", "sundayLiveScreen", "popup,width=10,height=10"); if (w && w.document.getElementById("host")) { screenWin = w; sessionStorage.setItem("sundayLive.screen", "1"); } else if (w) w.close(); } catch (e) {}
+}
+function screenOpen() { return screenWin && !screenWin.closed; }
+window.addEventListener("message", e => {
+  if (e.data && e.data.sundayLiveKey) onKey({ key: e.data.sundayLiveKey, preventDefault() {}, target: document.body });
+  if (e.data && e.data.sundayLiveResize && screenOpen()) rescale(screenWin.document.getElementById("host"));
+});
+function plainText(sl) {
+  if (!sl) return "";
+  if (sl.kind === "scripture") return sl.verses.map(v => v.t).join(" ") + "\n— " + sl.ref;
+  if (sl.kind === "text") return (sl.title ? sl.title + "\n" : "") + (sl.body || "");
+  return sl.label || "";
+}
+
+/* ---------- rendering the operator page ---------- */
+function updateLive(fade) {
+  const sl = liveSlide();
+  paint($("mon-live"), sl, mode, { fade: false });
+  if (screenOpen()) {
+    const host = screenWin.document.getElementById("host");
+    if (host) paint(host, sl, mode, { fade: fade && look.fade });
+  }
+  const n = nextPos(), nsl = n ? itemSlides(svc.items[n.i], n.i)[n.s] : sl && live.direct && sl.kind === "scripture" ? nextVerse(sl) : null;
+  paint($("mon-next"), nsl, "", {});
+  $("live-name").textContent = mode === "black" ? "Black screen" : mode === "logo" ? "Logo" : live ? (live.direct ? (live.direct.label || "") + " (not in service order)" : itemTitle(svc.items[live.i]) + " · " + (live.s + 1)) : "Nothing yet";
+  $("next-name").textContent = n ? itemTitle(svc.items[n.i]) + " · " + (n.s + 1) : nsl ? nsl.label : "";
+  for (const m of ["black", "logo", "clear"]) { $("m-" + m).setAttribute("aria-pressed", mode === m); $("rb-" + m).setAttribute("aria-pressed", mode === m); }
+  const isVerse = sl && sl.kind === "scripture";
+  $("live-verse").hidden = !isVerse;
+  if (isVerse) $("live-tr").value = sl.tr;
+  if (stageWin && !stageWin.closed) {
+    try {
+      const d = stageWin.document;
+      d.getElementById("now").textContent = mode === "black" ? "(black screen)" : mode === "logo" ? "(logo)" : plainText(sl);
+      d.getElementById("next").textContent = plainText(nsl);
+      d.getElementById("name").textContent = live && !live.direct ? itemTitle(svc.items[live.i]) : "";
+    } catch (e) {}
+  }
+  $("screen-status").textContent = screenOpen() ? "Projector open" : "Projector not open";
+  $("btn-screen").setAttribute("aria-pressed", !!screenOpen());
+  renderSvc(); markLiveThumbs(); markLiveVerses();
+}
+function renderSvc() {
+  const ol = $("svc"); ol.innerHTML = "";
+  $("svc-count").textContent = svc.items.length ? svc.items.length + (svc.items.length === 1 ? " item" : " items") : "";
+  if (!svc.items.length) { ol.append(el("li", { class: "empty", style: "display:block;cursor:default" }, "Nothing here yet. Add songs, scripture and slides with the buttons below.")); return; }
+  svc.items.forEach((it, i) => {
+    const count = itemSlides(it, i).length;
+    const sub = it.type === "song" ? count + (count === 1 ? " slide" : " slides") : it.type === "hymn" ? "Hymn title" : it.type === "scripture" ? count + (count === 1 ? " slide" : " slides") : "";
+    const li = el("li", { class: (i === sel ? "sel " : "") + (live && !live.direct && live.i === i ? "live" : ""), draggable: "true", title: "Click to see its slides. Double-click to show the first one." },
+      el("span", { class: "num", text: i + 1 }),
+      el("span", { class: "ic", "aria-hidden": "true", style: "--c:var(--c-" + (it.type === "welcome" && it.style === "black" ? "welcome" : it.type) + ")" }, ico(it.type === "welcome" && it.style === "black" ? "black" : it.type === "welcome" && it.style === "photo" ? "image" : ICONS[it.type] || "slide")),
+      el("div", { class: "t" }, itemTitle(it), sub ? el("small", { text: sub }) : null),
+      el("div", { class: "acts" },
+        el("button", { type: "button", "aria-label": "Move up", title: "Move up", on: { click: e => { e.stopPropagation(); moveItem(i, -1); } } }, ico("up")),
+        el("button", { type: "button", "aria-label": "Move down", title: "Move down", on: { click: e => { e.stopPropagation(); moveItem(i, 1); } } }, ico("down")),
+        el("button", { type: "button", "aria-label": "Take out of service", title: "Take out of service", on: { click: e => { e.stopPropagation(); removeItem(i); } } }, ico("x"))));
+    li.addEventListener("click", () => { sel = i; renderSvc(); showTab("slides"); });
+    li.addEventListener("dblclick", () => goLive({ i, s: 0 }));
+    li.addEventListener("dragstart", e => { e.dataTransfer.setData("text/plain", String(i)); e.dataTransfer.effectAllowed = "move"; });
+    li.addEventListener("dragover", e => { e.preventDefault(); li.classList.add("drag-over"); });
+    li.addEventListener("dragleave", () => li.classList.remove("drag-over"));
+    li.addEventListener("drop", e => { e.preventDefault(); const from = +e.dataTransfer.getData("text/plain"); if (!isNaN(from) && from !== i) placeItem(from, i); });
+    ol.append(li);
+  });
+}
+function fixLiveAfterMove(map) { if (live && !live.direct) { const ni = map(live.i); if (ni == null) live = null; else live.i = ni; } }
+function placeItem(from, to) {
+  const [it] = svc.items.splice(from, 1); svc.items.splice(to, 0, it);
+  fixLiveAfterMove(i => i === from ? to : (from < i && i <= to) ? i - 1 : (to <= i && i < from) ? i + 1 : i);
+  sel = to; persist(); updateLive(false); renderSlides();
+}
+function moveItem(i, d) { const j = i + d; if (j < 0 || j >= svc.items.length) return; placeItem(i, j); }
+function removeItem(i) {
+  svc.items.splice(i, 1);
+  fixLiveAfterMove(x => x === i ? null : x > i ? x - 1 : x);
+  if (sel >= svc.items.length) sel = Math.max(0, svc.items.length - 1);
+  persist(); updateLive(false); renderSlides();
+}
+function addItem(it, show) {
+  it.id = newId();
+  const at = svc.items.length; svc.items.push(it); sel = at; persist();
+  if (show) goLive({ i: at, s: 0 }); else updateLive(false);
+  renderSlides();
+  toast("Added “" + itemTitle(it) + "” to the service.");
+}
+
+function makeThumb(sl, caption, onClick, isLive) {
+  const scr = el("div", { class: "screen" }); sizeScreen(scr);
+  const b = el("button", { type: "button", class: "thumb" + (isLive ? " live" : "") }, scr, el("div", { class: "cap" }, el("span", { text: caption }), isLive ? el("span", { text: "LIVE" }) : null));
+  b.addEventListener("click", onClick);
+  thumbQueue.push(() => paint(scr, sl, "", {}));
+  return b;
+}
+let thumbQueue = [];
+function flushThumbs() { const q = thumbQueue; thumbQueue = []; requestAnimationFrame(() => q.forEach(f => f())); }
+function renderSlides() {
+  const box = $("thumbs"); box.innerHTML = ""; $("slides-acts").innerHTML = "";
+  const it = svc.items[sel];
+  if (!it) { $("slides-title").textContent = "Pick something in the service order to see its slides."; return; }
+  $("slides-title").textContent = itemTitle(it);
+  if (it.type === "song" || it.type === "hymn") $("slides-acts").append(el("button", { type: "button", class: "small", on: { click: () => openEdit({ item: sel }) } }, ico("edit"), "Change words"));
+  if (it.type === "scripture") {
+    const s = el("select", { "aria-label": "Bible" }); for (const c in bibles) s.append(el("option", { value: c, text: c })); s.value = it.tr;
+    s.addEventListener("change", () => { it.tr = s.value; persist(); renderSlides(); updateLive(false); });
+    const v = el("select", { "aria-label": "Verses per slide" }); [1, 2, 3].forEach(n => v.append(el("option", { value: n, text: n + " verse" + (n > 1 ? "s" : "") + " per slide" }))); v.value = it.vps || 1;
+    v.addEventListener("change", () => { it.vps = +v.value; if (live && !live.direct && live.i === sel) live.s = 0; persist(); renderSlides(); updateLive(false); });
+    $("slides-acts").append(s, v);
+  }
+  if (it.type === "slide") $("slides-acts").append(el("button", { type: "button", class: "small", on: { click: () => editSlideItem(sel) } }, ico("edit"), "Change"));
+  itemSlides(it, sel).forEach((sl, s) => box.append(makeThumb(sl, sl.label || String(s + 1), () => goLive({ i: sel, s }), live && !live.direct && live.i === sel && live.s === s)));
+  box.dataset.item = sel;
+  flushThumbs();
+}
+function markLiveThumbs() {
+  const box = $("thumbs");
+  [...box.children].forEach((b, s) => {
+    const on = live && !live.direct && live.i === +box.dataset.item && live.s === s;
+    b.classList.toggle("live", !!on);
+    const cap = b.querySelector(".cap"); if (!cap) return;
+    const tag = cap.children[1];
+    if (on && !tag) cap.append(el("span", { text: "LIVE" })); else if (!on && tag) tag.remove();
+  });
+  if (tab === "slides" && live && !live.direct && live.i === +box.dataset.item) { const b = box.children[live.s]; if (b) b.scrollIntoView({ block: "nearest" }); }
+}
+
+/* ---------- tabs ---------- */
+function showTab(t) {
+  tab = t;
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  document.querySelectorAll(".pane").forEach(p => p.hidden = p.dataset.pane !== t);
+  if (t === "slides") renderSlides();
+  if (t === "songs") { renderSongs(); $("song-find").focus(); }
+  if (t === "bible") { renderChapter(); $("ref").focus(); }
+  if (t === "make") renderMake();
+  if (t === "look") renderLook();
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => showTab(b.dataset.go)));
+
+/* ---------- songs tab ---------- */
+let songSel = null;
+function renderSongs() {
+  const q = $("song-find").value.toLowerCase().trim(), list = $("song-list"); list.innerHTML = "";
+  const lib = library().filter(s => !q || s.t.toLowerCase().includes(q) || s.s.join(" ").toLowerCase().includes(q));
+  if (!lib.length) list.append(el("div", { class: "empty", text: "No song matches. Try other words, or type in a new song." }));
+  lib.forEach(s => {
+    const b = el("button", { type: "button", class: "it" + (songSel === s.id ? " sel" : "") }, s.t, el("small", { text: s.k === "hymn" ? "Hymn title" : (s.s[0] || "").replace(/\n/g, " / ") }));
+    b.addEventListener("click", () => { songSel = s.id; renderSongs(); });
+    b.addEventListener("dblclick", () => addSong(s));
+    list.append(b);
+  });
+  const s = songSel && songById(songSel), th = $("song-thumbs"), acts = $("song-acts");
+  th.innerHTML = ""; acts.innerHTML = "";
+  if (!s) { $("song-title").textContent = "Pick a song to see its slides"; return; }
+  $("song-title").textContent = s.t;
+  acts.append(
+    el("button", { type: "button", class: "primary", on: { click: () => addSong(s) } }, ico("plus"), "Add to service"),
+    el("button", { type: "button", on: { click: () => addSong(s, true) } }, ico("play"), "Show now"),
+    el("button", { type: "button", on: { click: () => openEdit({ id: s.id }) } }, ico("edit"), "Change words"));
+  const it = songItem(s);
+  itemSlides(it, svc.items.length).forEach((sl, i) => th.append(makeThumb(sl, sl.label, () => goLive({ direct: sl }), false)));
+  flushThumbs();
+}
+function songItem(s) { return s.k === "hymn" ? { type: "hymn", songId: s.id, t: s.t, s: s.s } : { type: "song", songId: s.id, t: s.t, s: s.s.slice() }; }
+function addSong(s, show) { addItem(songItem(s), show); }
+$("song-find").addEventListener("input", renderSongs);
+
+let editing = null;
+function openEdit(o) {
+  editing = o;
+  let s = null, hymn = !!o.hymn;
+  if (o.item != null) { const it = svc.items[o.item]; s = { t: it.t, s: it.s, k: it.type === "hymn" ? "hymn" : "song" }; }
+  else if (o.id) s = songById(o.id);
+  if (s) hymn = s.k === "hymn";
+  $("dlg-title").textContent = s ? "Change the words" : hymn ? "Hymn from the book" : "Type in a new song";
+  $("dlg-name").value = s ? s.t : "";
+  $("dlg-name").placeholder = hymn ? "For example: Amazing Grace #92" : "For example: Amazing Grace";
+  $("dlg-words-wrap").hidden = hymn;
+  $("dlg-words").value = s && !hymn ? s.s.join("\n\n") : "";
+  $("dlg").showModal();
+  (s && !hymn ? $("dlg-words") : $("dlg-name")).focus();
+}
+$("dlg-cancel").addEventListener("click", () => $("dlg").close());
+$("dlg-save").addEventListener("click", () => {
+  const name = $("dlg-name").value.trim(), hymn = $("dlg-words-wrap").hidden;
+  const words = $("dlg-words").value.replace(/\r/g, "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  if (!name) { $("dlg-name").focus(); return; }
+  if (!hymn && !words.length) { $("dlg-words").focus(); return; }
+  const data = hymn ? { t: name, k: "hymn", s: [name + "\n(Hymn)"] } : { t: name, k: "song", s: words };
+  const custom = customLib();
+  let id = editing.id || (editing.item != null ? svc.items[editing.item].songId : null);
+  if (id && id[0] === "b") custom.edits[id] = Object.assign({}, custom.edits[id], data);
+  else if (id && custom.added.some(a => a.id === id)) Object.assign(custom.added.find(a => a.id === id), data);
+  else { id = "c" + Date.now(); custom.added.push(Object.assign({ id, d: today() }, data)); }
+  save(KEY_LIB, custom);
+  // Update every copy of this song in the service order.
+  svc.items.forEach(it => { if (it.songId === id || (editing.item != null && it === svc.items[editing.item])) Object.assign(it, songItem(Object.assign({ id }, data)), { id: it.id }); });
+  persist(); $("dlg").close();
+  if (editing.item == null && !editing.id) { addItem(songItem(Object.assign({ id }, data))); }
+  songSel = id; fitCache.clear();
+  if (tab === "songs") renderSongs(); renderSlides(); updateLive(false);
+});
+$("song-new").addEventListener("click", () => openEdit({}));
+$("song-hymn").addEventListener("click", () => openEdit({ hymn: true }));
+
+/* ---------- Bible tab ---------- */
+let bibleView = load("sundayLive.bibleView.v1", { b: 42, c: 3, tr: "KJV", vps: 1 });
+let pick = null; // {a, z} verse numbers in the shown chapter
+function bibleTr() { return bibles[bibleView.tr] ? bibleView.tr : "KJV"; }
+function renderBookSelects() {
+  const bs = $("book"); if (!bs.options.length) BOOKS.forEach((n, i) => bs.append(el("option", { value: i, text: n })));
+  bs.value = bibleView.b;
+  const cs = $("chap"); cs.innerHTML = "";
+  const n = bibles.KJV ? bibles.KJV[bibleView.b].length : 1;
+  for (let i = 1; i <= n; i++) cs.append(el("option", { value: i, text: "Chapter " + i }));
+  cs.value = bibleView.c;
+}
+function renderChapter() {
+  save("sundayLive.bibleView.v1", bibleView);
+  renderBookSelects();
+  const box = $("verses"); box.innerHTML = "";
+  if (!bibles.KJV) { box.append(el("p", { text: "Loading the Bible…" })); return; }
+  const ch = bibles[bibleTr()][bibleView.b][bibleView.c - 1];
+  ch.forEach((t, i) => {
+    const v = i + 1;
+    const p = el("p", { "data-v": v }, el("b", { text: v }), t || "(This verse is not in the oldest manuscripts.)");
+    p.addEventListener("click", e => {
+      if (e.shiftKey && pick) { pick = { a: Math.min(pick.a, v), z: Math.max(pick.z, v) }; } else pick = { a: v, z: v };
+      markPick();
+    });
+    p.addEventListener("dblclick", () => { pick = { a: v, z: v }; markPick(); showPick(); });
+    box.append(p);
+  });
+  markPick(); markLiveVerses(); renderRecent();
+}
+function pickRef() { return pick && { b: bibleView.b, c: bibleView.c, v: pick.a, c2: bibleView.c, v2: pick.z }; }
+function markPick() {
+  [...$("verses").children].forEach(p => p.classList.toggle("sel", !!pick && +p.dataset.v >= pick.a && +p.dataset.v <= pick.z));
+  $("pick-label").textContent = pick ? refText(pickRef()) : "Pick a verse";
+  $("b-add").disabled = $("b-show").disabled = !pick;
+}
+function markLiveVerses() {
+  const sl = liveSlide(), on = sl && sl.kind === "scripture" && sl.pos.b === bibleView.b ? sl.pos : null;
+  [...$("verses").children].forEach(p => {
+    const v = +p.dataset.v;
+    p.classList.toggle("live", !!on && (on.c < bibleView.c || (on.c === bibleView.c && v >= on.v)) && (on.c2 > bibleView.c || (on.c2 === bibleView.c && v <= on.v2)));
+  });
+}
+function scrollToVerse(v) { const p = $("verses").querySelector('[data-v="' + v + '"]'); if (p) p.scrollIntoView({ block: "nearest" }); }
+function showPick() { const r = pickRef(); if (r) showVerseDirect(bibleTr(), r); }
+function addPick() { const r = pickRef(); if (!r) return; addItem(Object.assign({ type: "scripture", tr: bibleTr(), vps: +bibleView.vps || 1 }, r)); addRecent(r); }
+$("b-show").addEventListener("click", showPick);
+$("b-add").addEventListener("click", addPick);
+$("book").addEventListener("change", () => { bibleView.b = +$("book").value; bibleView.c = 1; pick = null; renderChapter(); $("verses").scrollTop = 0; });
+$("chap").addEventListener("change", () => { bibleView.c = +$("chap").value; pick = null; renderChapter(); $("verses").scrollTop = 0; });
+function chapStep(d) {
+  let { b, c } = bibleView; c += d;
+  if (c < 1) { if (b === 0) return; b--; c = bibles.KJV[b].length; }
+  else if (c > bibles.KJV[b].length) { if (b === 65) return; b++; c = 1; }
+  bibleView.b = b; bibleView.c = c; pick = null; renderChapter(); $("verses").scrollTop = 0;
+}
+$("ch-prev").addEventListener("click", () => chapStep(-1));
+$("ch-next").addEventListener("click", () => chapStep(1));
+$("tr").addEventListener("change", () => { bibleView.tr = $("tr").value; renderChapter(); onRefInput(); });
+$("vps").addEventListener("change", () => { bibleView.vps = +$("vps").value; save("sundayLive.bibleView.v1", bibleView); });
+function onRefInput() {
+  const q = $("ref").value, out = $("ref-out"); out.innerHTML = "";
+  if (!q.trim() || !bibles.KJV) return;
+  const p = parseRef(q);
+  if (p) {
+    const vs = versesOf(bibleTr(), p);
+    out.append(el("div", { class: "refhit" }, refText(p) + " (" + bibleTr() + ")",
+      el("div", { style: "font-weight:400;font-size:.9rem;color:var(--muted);max-height:4.2em;overflow:hidden", text: vs.map(x => x.t).join(" ") })));
+    out.append(el("div", { class: "row" },
+      el("button", { type: "button", class: "primary", on: { click: () => refGo(p, true) } }, ico("play"), "Show now"),
+      el("button", { type: "button", on: { click: () => refGo(p, false) } }, ico("plus"), "Add to service"),
+      el("span", { class: "hint", text: "Enter shows it · Shift+Enter adds it" })));
+    if (bibleView.b !== p.b || bibleView.c !== p.c) { bibleView.b = p.b; bibleView.c = p.c; pick = { a: p.v, z: p.c2 === p.c ? p.v2 : bibles.KJV[p.b][p.c - 1].length }; renderChapter(); scrollToVerse(p.v); }
+    return;
+  }
+  if (q.trim().length < 3) return;
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean), B = bibles[bibleTr()], hits = [];
+  outer: for (let b = 0; b < 66; b++) for (let c = 0; c < B[b].length; c++) for (let v = 0; v < B[b][c].length; v++) {
+    const t = B[b][c][v].toLowerCase();
+    if (words.every(w => t.includes(w))) { hits.push({ b, c: c + 1, v: v + 1, t: B[b][c][v] }); if (hits.length >= 80) break outer; }
+  }
+  const list = el("div", { class: "list", style: "max-height:300px" });
+  if (!hits.length) list.append(el("div", { class: "empty", text: "No verse has those words in the " + bibleTr() + "." }));
+  hits.forEach(h => {
+    const b = el("button", { type: "button", class: "it" }, BOOKS[h.b] + " " + h.c + ":" + h.v, el("small", { text: h.t }));
+    b.addEventListener("click", () => { bibleView.b = h.b; bibleView.c = h.c; pick = { a: h.v, z: h.v }; renderChapter(); scrollToVerse(h.v); });
+    b.addEventListener("dblclick", () => showVerseDirect(bibleTr(), { b: h.b, c: h.c, v: h.v, c2: h.c, v2: h.v }));
+    list.append(b);
+  });
+  out.append(el("p", { class: "hint", text: hits.length >= 80 ? "First 80 verses with those words:" : hits.length + " verses with those words:" }), list);
+}
+function refGo(p, show) {
+  if (show) showVerseDirect(bibleTr(), p);
+  else { addItem(Object.assign({ type: "scripture", tr: bibleTr(), vps: +bibleView.vps || 1 }, p)); addRecent(p); }
+}
+$("ref").addEventListener("input", onRefInput);
+$("ref").addEventListener("keydown", e => {
+  if ((e.key === "ArrowDown" || e.key === "ArrowUp") && (liveSlide() || {}).kind === "scripture") { e.preventDefault(); return verseStep(e.key === "ArrowDown" ? 1 : -1); }
+  if (e.key !== "Enter") return;
+  const p = bibles.KJV && parseRef($("ref").value); if (!p) return;
+  e.preventDefault(); refGo(p, !e.shiftKey); $("ref").select();
+});
+let recent = load(KEY_RECENT, []);
+function addRecent(p) {
+  const r = { b: p.b, c: p.c, v: p.v, c2: p.c2, v2: p.v2 }, k = refText(r);
+  recent = [r].concat(recent.filter(x => refText(x) !== k)).slice(0, 10);
+  save(KEY_RECENT, recent); renderRecent();
+}
+function renderRecent() {
+  const box = $("recent"); box.innerHTML = "";
+  if (!recent.length) { box.append(el("span", { class: "hint", text: "Verses you show will be listed here." })); return; }
+  recent.forEach(r => box.append(el("button", { type: "button", class: "small", text: refText(r), on: { click: () => { $("ref").value = refText(r); onRefInput(); }, dblclick: () => showVerseDirect(bibleTr(), r) } })));
+}
+$("verses").addEventListener("keydown", e => {
+  if (!pick || !["ArrowUp", "ArrowDown", "Enter"].includes(e.key)) return;
+  e.preventDefault(); e.stopPropagation();
+  if (e.key === "Enter") return showPick();
+  const n = Math.min(Math.max(pick.a + (e.key === "ArrowDown" ? 1 : -1), 1), $("verses").children.length);
+  pick = { a: n, z: n }; markPick(); scrollToVerse(n);
+});
+
+/* ---------- make a slide ---------- */
+let makeBg = "i:welcomeBg", editingSlide = null;
+function draftSlide() {
+  return { kind: "text", look: "slide", ordinal: 0, title: $("m-title").value.trim(), body: $("m-text").value.replace(/\r/g, "").trim(), bg: $("m-own").checked ? null : makeBg, label: "Slide" };
+}
+function renderMake() {
+  bgSwatches($("m-bgs"), () => makeBg, id => { makeBg = id; $("m-own").checked = false; renderMake(); }, "slide");
+  const pv = $("m-preview"); sizeScreen(pv); paint(pv, draftSlide(), "", {});
+  $("m-add").querySelector("span").textContent = editingSlide != null ? "Save changes" : "Add to service";
+  if (!$("cd-time").value) { const d = new Date(Date.now() + 15 * 60000); $("cd-time").value = String(d.getHours()).padStart(2, "0") + ":" + String(Math.ceil(d.getMinutes() / 5) * 5 % 60).padStart(2, "0"); }
+}
+["m-title", "m-text", "m-own"].forEach(id => $(id).addEventListener("input", renderMake));
+$("m-own").addEventListener("change", renderMake);
+function slideItemFromForm() { const d = draftSlide(); return { type: "slide", title: d.title, text: d.body, bg: d.bg }; }
+$("m-add").addEventListener("click", () => {
+  const it = slideItemFromForm(); if (!it.title && !it.text) { $("m-text").focus(); return; }
+  if (editingSlide != null && svc.items[editingSlide]) { Object.assign(svc.items[editingSlide], it); persist(); editingSlide = null; updateLive(false); showTab("slides"); }
+  else addItem(it);
+  $("m-title").value = ""; $("m-text").value = ""; renderMake();
+});
+$("m-show").addEventListener("click", () => { const it = slideItemFromForm(); if (!it.title && !it.text) { $("m-text").focus(); return; } addItem(it, true); });
+function editSlideItem(i) {
+  const it = svc.items[i]; editingSlide = i;
+  $("m-title").value = it.title || ""; $("m-text").value = it.text || ""; $("m-own").checked = !it.bg; if (it.bg) makeBg = it.bg;
+  showTab("make");
+}
+document.querySelectorAll("[data-ready]").forEach(b => b.addEventListener("click", () => addItem({ type: "welcome", style: b.dataset.ready })));
+$("add-welcome").addEventListener("click", () => addItem({ type: "welcome", style: "welcome" }));
+$("cd-add").addEventListener("click", () => addItem({ type: "countdown", time: $("cd-time").value }));
+$("cd-show").addEventListener("click", () => addItem({ type: "countdown", time: $("cd-time").value }, true));
+setInterval(() => {
+  const sl = liveSlide(); if (!sl || sl.kind !== "countdown" || mode) return;
+  const txt = countdownText(sl.time);
+  const hosts = [$("mon-live")]; if (screenOpen()) hosts.push(screenWin.document.getElementById("host"));
+  hosts.forEach(h => h && h.querySelectorAll(".cd").forEach(c => c.textContent = txt));
+}, 1000);
+
+/* ---------- look tab ---------- */
+let lookWhich = "song";
+function bgSwatches(box, get, set, which) {
+  box.innerHTML = "";
+  const all = BGS.filter(b => !b.songsOnly || which === "song").concat(pictures.map(p => ({ id: "i:" + p.id, own: true })));
+  all.forEach(b => {
+    const img = b.id.startsWith("i:") ? picData(b.id.slice(2)) : null;
+    const btn = el("button", { type: "button", class: "sw", "aria-pressed": get() === b.id, title: b.name || "" });
+    btn.style.background = img ? "url(" + img + ") center/cover" : b.css;
+    if (b.id === "alt") { btn.style.color = "#888"; btn.textContent = "B/W"; }
+    btn.addEventListener("click", () => set(b.id));
+    if (b.own) btn.addEventListener("contextmenu", e => { e.preventDefault(); if (confirmRemovePic(b.id.slice(2))) renderLook(); });
+    box.append(btn);
+  });
+}
+function confirmRemovePic(id) {
+  pictures = pictures.filter(p => p.id !== id); save(KEY_PICS, pictures);
+  for (const k in LOOK_DEFAULTS) if (look[k].bg === "i:" + id) look[k].bg = LOOK_DEFAULTS[k].bg;
+  saveLook(); toast("Picture removed."); return true;
+}
+function lookChanged() { saveLook(); fitCache.clear(); renderLook(); updateLive(false); if (tab === "slides") renderSlides(); }
+function sampleSlide(which) {
+  const sl = liveSlide();
+  if (sl && sl.look === which) return { sl, live: true };
+  if (which === "song") return { sl: { kind: "text", look: "song", ordinal: 0, body: "Amazing grace! How sweet the sound\nThat saved a wretch like me!\nI once was lost, but now am found;\nWas blind, but now I see." } };
+  if (which === "scripture") return { sl: { kind: "scripture", look: "scripture", ordinal: 0, verses: [{ v: 16, t: bibles.KJV ? bibles.KJV[42][2][15] : "For God so loved the world…" }], ref: "John 3:16 KJV", tr: "KJV", pos: { b: 42, c: 3, v: 16, c2: 3, v2: 16 } } };
+  return { sl: { kind: "text", look: "slide", ordinal: 0, title: "Fellowship Lunch", body: "Everyone is welcome after the service today!" } };
+}
+function renderLook() {
+  const lk = look[lookWhich];
+  const which = $("look-which"); which.innerHTML = "";
+  for (const k in LOOK_NAMES) which.append(el("button", { type: "button", class: "small", "aria-pressed": k === lookWhich, text: LOOK_NAMES[k], on: { click: () => { lookWhich = k; renderLook(); } } }));
+  bgSwatches($("l-bgs"), () => lk.bg, id => { lk.bg = id; lookChanged(); }, lookWhich);
+  $("l-dim").value = lk.dim; $("l-dim-v").textContent = lk.dim + "%";
+  const cols = $("l-colors"); cols.innerHTML = "";
+  TEXT_COLORS.forEach(c => {
+    const b = el("button", { type: "button", class: "sw", "aria-pressed": lk.color === c, title: c === "auto" ? "Automatic" : c });
+    if (c === "auto") { b.textContent = "Auto"; b.style.background = "linear-gradient(135deg,#fff 50%,#000 50%)"; b.style.color = "#888"; } else b.style.background = c;
+    b.addEventListener("click", () => { lk.color = c; lookChanged(); });
+    cols.append(b);
+  });
+  const fonts = $("l-fonts"); fonts.innerHTML = "";
+  FONTS.forEach(f => fonts.append(el("button", { type: "button", class: "small", "aria-pressed": lk.font === f, style: "font-family:'" + f + "'", text: f, on: { click: () => { lk.font = f; lookChanged(); } } })));
+  $("l-size").value = lk.size; $("l-size-v").textContent = lk.size;
+  $("l-bold").checked = lk.bold; $("l-shadow").checked = lk.shadow; $("l-caps").checked = lk.caps;
+  const al = $("l-align"); al.innerHTML = "";
+  [["left", "Left"], ["center", "Middle"], ["right", "Right"]].forEach(([v, n]) => al.append(el("button", { type: "button", class: "small", "aria-pressed": lk.align === v, text: n, on: { click: () => { lk.align = v; lookChanged(); } } })));
+  $("l-refrow").hidden = lookWhich !== "scripture";
+  if (lookWhich === "scripture") {
+    const rp = $("l-refpos"); rp.innerHTML = "";
+    [["bottom", "Below"], ["top", "Above"], ["none", "Hide"]].forEach(([v, n]) => rp.append(el("button", { type: "button", class: "small", "aria-pressed": lk.refPos === v, text: n, on: { click: () => { lk.refPos = v; lookChanged(); } } })));
+    $("l-nums").checked = lk.nums;
+  }
+  const sh = $("l-shape"); sh.innerHTML = "";
+  ["4:3", "16:9"].forEach(s => sh.append(el("button", { type: "button", class: "small", "aria-pressed": look.shape === s, text: s === "4:3" ? "4:3 (square-ish)" : "16:9 (wide)", on: { click: () => { look.shape = s; applyShape(); lookChanged(); } } })));
+  $("l-fade").checked = look.fade;
+  const sample = sampleSlide(lookWhich), pv = $("l-preview"); sizeScreen(pv);
+  paint(pv, sample.sl, "", {});
+  $("look-live-note").textContent = sample.live ? "(what's on the screen now)" : "";
+}
+$("l-dim").addEventListener("input", () => { look[lookWhich].dim = +$("l-dim").value; lookChanged(); });
+$("l-size").addEventListener("input", () => { look[lookWhich].size = +$("l-size").value; lookChanged(); });
+$("l-bold").addEventListener("change", () => { look[lookWhich].bold = $("l-bold").checked; lookChanged(); });
+$("l-shadow").addEventListener("change", () => { look[lookWhich].shadow = $("l-shadow").checked; lookChanged(); });
+$("l-caps").addEventListener("change", () => { look[lookWhich].caps = $("l-caps").checked; lookChanged(); });
+$("l-nums").addEventListener("change", () => { look.scripture.nums = $("l-nums").checked; lookChanged(); });
+$("l-fade").addEventListener("change", () => { look.fade = $("l-fade").checked; saveLook(); });
+$("l-reset").addEventListener("click", () => { look[lookWhich] = Object.assign({}, LOOK_DEFAULTS[lookWhich]); lookChanged(); });
+$("l-upload").addEventListener("click", () => $("l-file").click());
+$("l-file").addEventListener("change", async () => {
+  const f = $("l-file").files[0]; $("l-file").value = ""; if (!f) return;
+  const data = await shrinkImage(f);
+  if (!data) { toast("That picture could not be opened."); return; }
+  const id = "p" + Date.now().toString(36);
+  pictures.push({ id, data });
+  if (!save(KEY_PICS, pictures)) { pictures.pop(); toast("This browser is out of room for pictures. Remove one first (right-click it)."); return; }
+  look[lookWhich].bg = "i:" + id; lookChanged();
+  toast("Picture added. Right-click a picture swatch to remove it.");
+});
+function shrinkImage(file) {
+  return new Promise(res => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1600 / img.width, 1200 / img.height), c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = () => res(null);
+    img.src = url;
+  });
+}
+function applyShape() { document.querySelectorAll(".screen").forEach(sizeScreen); }
+
+/* ---------- keyboard and controls ---------- */
+function onKey(e) {
+  const t = e.target, typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
+  if (e.key === "PageDown" || e.key === "PageUp") { if ($("dlg").open || (t && t.tagName === "TEXTAREA")) return; e.preventDefault(); return e.key === "PageDown" ? goNext() : goPrev(); }
+  if (typing || e.ctrlKey || e.metaKey || e.altKey || document.querySelector("dialog[open]")) return;
+  if (t && t.id === "verses" && ["ArrowUp", "ArrowDown", "Enter"].includes(e.key)) return;
+  const k = e.key;
+  if (k === "ArrowRight" || k === "PageDown" || k === " ") { e.preventDefault(); goNext(); }
+  else if (k === "ArrowLeft" || k === "PageUp") { e.preventDefault(); goPrev(); }
+  else if (k === "ArrowDown") { e.preventDefault(); verseStep(1); }
+  else if (k === "ArrowUp") { e.preventDefault(); verseStep(-1); }
+  else if (k === "b" || k === "B" || k === ".") setMode("black");
+  else if (k === "l" || k === "L") setMode("logo");
+  else if (k === "c" || k === "C") setMode("clear");
+  else if (k === "Escape") { mode = ""; updateLive(true); }
+}
+document.addEventListener("keydown", onKey);
+$("go-next").addEventListener("click", goNext);
+$("go-prev").addEventListener("click", goPrev);
+$("v-down").addEventListener("click", () => verseStep(1));
+$("v-up").addEventListener("click", () => verseStep(-1));
+$("m-black").addEventListener("click", () => setMode("black"));
+$("m-logo").addEventListener("click", () => setMode("logo"));
+$("m-clear").addEventListener("click", () => setMode("clear"));
+$("btn-screen").addEventListener("click", openScreen);
+$("btn-stage").addEventListener("click", openStage);
+$("live-tr").addEventListener("change", () => {
+  const sl = liveSlide(); if (!sl || sl.kind !== "scripture") return;
+  const tr = $("live-tr").value;
+  if (live.direct) showVerseDirect(tr, sl.pos);
+  else { svc.items[live.i].tr = tr; persist(); updateLive(false); renderSlides(); }
+});
+
+/* ---------- service files ---------- */
+$("svc-name").addEventListener("input", () => { svc.name = $("svc-name").value; persist(); });
+$("btn-save").addEventListener("click", () => {
+  const used = new Set(); svc.items.forEach(it => it.bg && used.add(it.bg)); for (const k in LOOK_DEFAULTS) used.add(look[k].bg);
+  const pics = pictures.filter(p => used.has("i:" + p.id));
+  const blob = new Blob([JSON.stringify({ app: "sunday-live", version: 1, service: svc, look, pictures: pics }, null, 1)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = (svc.name || "Service").replace(/[\\/:*?"<>|]/g, "-") + ".json";
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast("Saved “" + a.download + "”. Open it on the church computer with “Open service”.");
+});
+$("btn-open").addEventListener("click", () => $("open-file").click());
+$("open-file").addEventListener("change", async () => {
+  const f = $("open-file").files[0]; $("open-file").value = ""; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (d.app !== "sunday-live" || !d.service) throw 0;
+    (d.pictures || []).forEach(p => { if (!pictures.some(x => x.id === p.id)) pictures.push(p); });
+    save(KEY_PICS, pictures);
+    if (d.look) { for (const k in LOOK_DEFAULTS) look[k] = Object.assign({}, LOOK_DEFAULTS[k], d.look[k]); look.shape = d.look.shape || look.shape; if (d.look.fade != null) look.fade = d.look.fade; saveLook(); }
+    svc = d.service; svc.items.forEach(it => it.id = it.id || newId());
+    live = null; sel = 0; mode = ""; persist(); fitCache.clear(); applyShape(); startUp();
+    toast("Opened “" + (svc.name || f.name) + "”.");
+  } catch (e) { toast("That file is not a Sunday Live service."); }
+});
+function ask(title, text, yes) {
+  return new Promise(res => {
+    const d = $("ask"); $("ask-title").textContent = title; $("ask-text").textContent = text; $("ask-yes").textContent = yes;
+    d.returnValue = ""; d.showModal(); $("ask-yes").focus();
+    d.addEventListener("close", () => res(d.returnValue === "yes"), { once: true });
+  });
+}
+$("btn-clear").addEventListener("click", async () => {
+  if (svc.items.length && !(await ask("Start a new service?", "This clears the service order. Save it first if you want to keep it.", "Clear and start new"))) return;
+  svc = { name: "Sunday " + nextSunday(), items: [] }; live = null; sel = 0; persist(); startUp();
+});
+$("btn-import").addEventListener("click", () => {
+  const week = load(KEY_WEEK, null);
+  if (!week || !week.songs || !week.songs.length) { toast("Nothing picked in Sunday Slides yet. Pick songs there first."); return; }
+  const items = [];
+  if (week.welcomeStart) items.push({ type: "welcome", style: week.welcome === "photo" ? "photo" : "welcome" });
+  (week.anns || []).filter(a => a.trim()).forEach(a => items.push({ type: "slide", title: "", text: a.trim(), bg: null }));
+  week.songs.forEach(e => { const s = e.custom || songById(e.id); if (s) items.push(Object.assign(songItem(Object.assign({ id: e.id }, s)))); });
+  if (week.welcomeEnd) items.push({ type: "welcome", style: week.welcome === "photo" ? "photo" : "welcome" });
+  items.forEach(it => { it.id = newId(); svc.items.push(it); });
+  if (week.date) { const [y, m, d] = week.date.split("-"); svc.name = "Sunday " + (+m) + "/" + (+d) + "/" + y; }
+  persist(); startUp();
+  toast("Brought in " + week.songs.length + " songs from Sunday Slides.");
+});
+
+/* ---------- menus, toolbar commands and light/dark mode ---------- */
+const KEY_THEME = "sundayLive.theme.v1";
+function applyTheme(t) {
+  if (t === "light") document.documentElement.setAttribute("data-theme", "light"); else document.documentElement.removeAttribute("data-theme");
+  const other = t === "light" ? "Dark mode" : "Light mode";
+  document.querySelectorAll(".theme-name").forEach(n => n.textContent = other);
+  document.querySelectorAll('[data-cmd="theme"] use').forEach(u => u.setAttribute("href", t === "light" ? "#i-moon" : "#i-sun"));
+}
+function toggleTheme() { const t = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light"; applyTheme(t); save(KEY_THEME, t); }
+applyTheme(load(KEY_THEME, "dark"));
+const CMDS = {
+  new: () => $("btn-clear").click(), open: () => $("btn-open").click(), save: () => $("btn-save").click(), import: () => $("btn-import").click(),
+  builder: () => { location.href = "index.html"; },
+  song: () => showTab("songs"), newsong: () => openEdit({}), hymn: () => openEdit({ hymn: true }), bible: () => showTab("bible"), slide: () => showTab("make"),
+  welcome: () => addItem({ type: "welcome", style: "welcome" }), photo: () => addItem({ type: "welcome", style: "photo" }), blank: () => addItem({ type: "welcome", style: "black" }),
+  countdown: () => { showTab("make"); $("cd-time").focus(); },
+  next: goNext, prev: goPrev, vdown: () => verseStep(1), vup: () => verseStep(-1),
+  black: () => setMode("black"), logo: () => setMode("logo"), clear: () => setMode("clear"),
+  screen: () => $("btn-screen").click(), stage: () => $("btn-stage").click(),
+  theme: toggleTheme, look: () => showTab("look"),
+  shape43: () => { look.shape = "4:3"; applyShape(); lookChanged(); }, shape169: () => { look.shape = "16:9"; applyShape(); lookChanged(); },
+  keys: () => $("help").showModal()
+};
+function closeMenus(except) { document.querySelectorAll(".menu.open").forEach(m => { if (m !== except) { m.classList.remove("open"); m.firstElementChild.setAttribute("aria-expanded", "false"); } }); }
+document.querySelectorAll(".menu").forEach(m => {
+  const b = m.firstElementChild;
+  b.addEventListener("click", e => { e.stopPropagation(); const open = !m.classList.contains("open"); closeMenus(m); m.classList.toggle("open", open); b.setAttribute("aria-expanded", open); if (open) m.querySelector(".drop button").focus(); });
+  b.addEventListener("mouseenter", () => { if (document.querySelector(".menu.open") && !m.classList.contains("open")) { closeMenus(m); m.classList.add("open"); b.setAttribute("aria-expanded", "true"); } });
+  m.querySelector(".drop").addEventListener("keydown", e => {
+    const items = [...m.querySelectorAll(".drop button")], i = items.indexOf(document.activeElement);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); e.stopPropagation(); items[(i + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus(); }
+    else if (e.key === "Escape") { e.stopPropagation(); closeMenus(); b.focus(); }
+  });
+});
+document.addEventListener("click", () => closeMenus());
+document.querySelectorAll("[data-cmd]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); closeMenus(); CMDS[b.dataset.cmd](); }));
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+    const k = e.key.toLowerCase();
+    if (k === "s") { e.preventDefault(); CMDS.save(); } else if (k === "o") { e.preventDefault(); CMDS.open(); } else if (k === "l") { e.preventDefault(); toggleTheme(); }
+  } else if (e.key === "?" && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) CMDS.keys();
+});
+
+/* ---------- start ---------- */
+function startUp() {
+  $("svc-name").value = svc.name || "";
+  for (const sel of [$("tr"), $("live-tr")]) { sel.innerHTML = ""; for (const c in bibles) sel.append(el("option", { value: c, text: c + " – " + TRANSLATIONS[c] })); }
+  $("tr").value = bibleTr(); $("vps").value = bibleView.vps || 1;
+  updateLive(false); showTab(tab);
+}
+document.querySelectorAll(".screen").forEach(sizeScreen);
+new ResizeObserver(() => { rescale($("mon-live")); rescale($("mon-next")); }).observe($("mon-live"));
+window.addEventListener("resize", () => document.querySelectorAll(".screen").forEach(rescale));
+reattach();
+startUp();
+bibleReady = loadBibles().then(startUp).catch(err => { console.error(err); toast("The Bible could not be loaded in this browser. Please use an up-to-date Chrome, Edge or Firefox."); });
+window.addEventListener("beforeunload", () => { if (screenOpen()) try { screenWin.document.getElementById("host").innerHTML = ""; } catch (e) {} });
+</script>
