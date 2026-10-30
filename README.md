@@ -28,6 +28,8 @@ Changes and new songs are saved in the browser that made them. **Save a backup o
 
 **Look:** songs, scripture and other slides each have their own background (colors, gradients, the church pictures, or your own picture), word color, letters, size, shadow and alignment. Changes show on the projector right away. The screen shape can be 4:3 or 16:9.
 
+**Menus and toolbar:** like MediaShout, the page has a File / Insert / Live / View / Help menu bar and a toolbar of large icon buttons. It starts in dark mode. **View → Light mode** (or <kbd>Ctrl</kbd>+<kbd>L</kbd>) switches it, and each computer remembers its choice. **Help → Keyboard shortcuts** (or <kbd>?</kbd>) lists the keys.
+
 **Save service** downloads the service order (with its look and pictures) as a file. Open that file on the church computer with **Open service**. Song changes are shared with the Sunday Slides builder when both pages are opened in the same browser.
 
 ## How it's built
