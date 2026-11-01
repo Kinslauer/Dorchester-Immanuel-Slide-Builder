@@ -129,7 +129,7 @@ footer button { font-size: .9rem; min-height: 40px; }
 .slidepanel { position: sticky; top: 12px; }
 .mini { aspect-ratio: 4 / 3; position: relative; overflow: hidden; display: grid; place-items: center; background-size: cover; background-position: center; }
 .mini .txt { white-space: pre-wrap; text-align: center; padding: 3%; line-height: 1.2; width: 100%; }
-.mini .wl { position: absolute; inset: 0; display: grid; justify-items: center; align-content: start; padding-top: 5%; color: #fff; text-align: center; font-family: Garamond, Georgia, serif; line-height: 1.1; }
+.mini .wl, .preview .wl { position: absolute; inset: 0; display: grid; justify-items: center; align-content: start; padding-top: 5%; color: #fff; text-align: center; font-family: Garamond, Georgia, serif; line-height: 1.1; }
 .sw { width: 64px; height: 48px; padding: 0; min-height: 0; border-radius: 6px; background-size: cover; background-position: center; }
 .sw[aria-pressed=true] { outline: 3px solid var(--accent); outline-offset: 2px; box-shadow: none; }
 .topbar { display: flex; gap: 10px; align-items: center; }
@@ -445,7 +445,7 @@ function slidesForSong(entry) {
 // The whole PowerPoint in order: what the "every slide" grid shows and what gets saved.
 function deckSlides() {
   const out = [];
-  if (week.welcomeStart) out.push({ kind: "welcome", key: "w0", group: "Welcome", label: "Welcome" });
+  if (week.welcomeStart) out.push(welcomeSlide("w0", "Welcome"));
   week.anns.forEach((a, i) => {
     if (!a.trim()) return;
     const base = week.bg === "alt" ? "c:FFFFFF" : "c:" + week.bg, own = (week.annBgs || {})[i];
@@ -458,8 +458,13 @@ function deckSlides() {
       out.push({ kind: "text", text: t, key: "s" + i + "-" + j, song: i, n: j, group: songTitle(e), label: "Slide " + (j + 1), bg: own || base, own: !!own });
     });
   });
-  if (week.welcomeEnd) out.push({ kind: "welcome", key: "w1", group: "Welcome", label: "Welcome (end)" });
+  if (week.welcomeEnd) out.push(welcomeSlide("w1", "Welcome (end)"));
   return out;
+}
+// Welcome slides keep their words and logo; only the background can be changed.
+function welcomeSlide(key, label) {
+  const own = (week.wBgs || {})[key];
+  return { kind: "welcome", key, wel: key, group: "Welcome", label, bg: own || (week.welcome === "photo" ? "i:church" : "i:welcomeBg"), own: !!own };
 }
 function songTitle(entry) { const s = entry.custom || songById(entry.id); return s ? s.t : "(missing song)"; }
 function allLyricSlides() { return deckSlides().filter(d => d.song != null).map(d => ({ text: d.text, song: d.song, title: d.group, n: d.n + 1, d })); }
@@ -540,14 +545,16 @@ function renderDeck() {
   });
   const d = deck.find(x => x.key === deckSel) || deck.find(x => x.kind === "text");
   if (d && !deckSel) deckSel = d.key;
-  $("sp-tools").hidden = !d || d.kind !== "text";
+  $("sp-tools").hidden = !d;
   $("sp-title").textContent = d ? d.group + " · " + d.label : "Tap a slide";
   const pvb = $("sp-preview");
   if (d) requestAnimationFrame(() => drawSlide(pvb, d)); else pvb.innerHTML = "";
-  if (!d || d.kind !== "text") return;
+  if (!d) return;
   const sc = $("sp-scope"); sc.innerHTML = "";
-  const scopes = d.song != null ? [["slide", "This slide only"], ["song", "Every slide of this song"]] : [["slide", "This slide"]];
-  if (d.song == null) spScope = "slide";
+  const both = week.welcomeStart && week.welcomeEnd;
+  const scopes = d.song != null ? [["slide", "This slide only"], ["song", "Every slide of this song"]]
+    : d.wel && both ? [["slide", "This Welcome slide only"], ["song", "Both Welcome slides"]] : [["slide", "This slide"]];
+  if (scopes.length === 1) spScope = "slide";
   scopes.forEach(([v, n]) => sc.append(el("button", { type: "button", class: "pick small", "aria-pressed": String(spScope === v), on: { click: () => { spScope = v; renderDeck(); } } }, n)));
   const sw = $("sp-bgs"); sw.innerHTML = "";
   slideBgChoices().forEach(id => {
@@ -557,7 +564,11 @@ function renderDeck() {
   });
 }
 function setSlideBg(d, id) {
-  if (d.ann != null) { week.annBgs = week.annBgs || {}; if (id) week.annBgs[d.ann] = id; else delete week.annBgs[d.ann]; }
+  if (d.wel) {
+    week.wBgs = week.wBgs || {};
+    const keys = spScope === "song" ? ["w0", "w1"] : [d.wel];
+    keys.forEach(k => { if (id) week.wBgs[k] = id; else delete week.wBgs[k]; });
+  } else if (d.ann != null) { week.annBgs = week.annBgs || {}; if (id) week.annBgs[d.ann] = id; else delete week.annBgs[d.ann]; }
   else {
     const e = week.songs[d.song];
     if (spScope === "song") { if (id) e.bg = id; else delete e.bg; delete e.bgs; }
@@ -572,12 +583,13 @@ function drawSlide(box, d) {
   const w = box.clientWidth || 160, k = w / 960;
   if (d.kind === "welcome") {
     const wl = el("div", { class: "wl" });
+    const info = bgInfo(d.bg);
+    box.style.background = d.own ? info.css : "#333 url(" + IMG[d.bg.slice(2)] + ") center/cover";
+    if (info.light) wl.style.color = "#000";
     if (week.welcome === "photo") {
-      box.style.background = "#000 url(" + IMG.church + ") center/cover";
       wl.append(el("div", { style: "font-family:Calibri,Arial,sans-serif;font-weight:700;width:40%;font-size:" + 53 * k + "px" }, "Dorchester Immanuel"));
-      wl.append(el("img", { src: IMG.logoWhite, alt: "", style: "width:52%;margin-top:-1%" }));
+      wl.append(el("img", { src: info.light ? IMG.logo : IMG.logoWhite, alt: "", style: "width:52%;margin-top:-1%" }));
     } else {
-      box.style.background = "#333 url(" + IMG.welcomeBg + ") center/cover";
       wl.append(el("div", { style: "font-size:" + 88 * k + "px" }, "WELCOME"), el("div", { style: "font-size:" + 72 * k + "px" }, "TO"), el("div", { style: "font-size:" + 72 * k + "px" }, "DORCHESTER IMMANUEL"));
       wl.append(el("img", { src: IMG.logo, alt: "", style: "height:34%;margin-top:6%" }));
     }
@@ -693,7 +705,7 @@ $("sp-file").addEventListener("change", async () => {
   pictures = load(KEY_PICS, []);
   const id = "p" + Date.now().toString(36); pictures.push({ id, data });
   try { localStorage.setItem(KEY_PICS, JSON.stringify(pictures)); } catch (e) { pictures.pop(); $("status").className = "bad"; $("status").textContent = "This browser is out of room for more pictures."; return; }
-  const d = deckSlides().find(x => x.key === deckSel); if (d && d.kind === "text") setSlideBg(d, "p:" + id); else changed();
+  const d = deckSlides().find(x => x.key === deckSel); if (d) setSlideBg(d, "p:" + id); else changed();
 });
 /* light / dark */
 const KEY_THEME = "sundaySlides.theme.v1";
@@ -740,20 +752,23 @@ async function offerFile(filename, blob) {
 }
 
 /* ---------- build the PowerPoint ---------- */
-function addWelcome(pptx) {
-  const s = pptx.addSlide();
+async function addWelcome(pptx, d) {
+  const s = pptx.addSlide(), info = bgInfo(d.bg), fg = info.light ? "000000" : "FFFFFF";
+  if (d.own) {
+    if (d.bg.startsWith("c:")) s.background = { color: d.bg.slice(2) };
+    else s.background = { data: await bgImageData(d.bg) };
+  }
   if (week.welcome === "photo") {
-    s.background = { color: "000000" };
-    s.addImage({ data: IMG.church, x: 0, y: 0, w: 10, h: 7.5 });
-    s.addImage({ data: IMG.logoWhite, x: 2.43, y: 2.56, w: 5.23, h: 3.89 });
-    s.addText("Dorchester Immanuel", { x: 3.95, y: 0.94, w: 3.19, h: 1.78, fontFace: "Calibri", fontSize: 40, bold: true, color: "FFFFFF", align: "center", valign: "top" });
+    if (!d.own) { s.background = { color: "000000" }; s.addImage({ data: IMG.church, x: 0, y: 0, w: 10, h: 7.5 }); }
+    s.addImage({ data: info.light ? IMG.logo : IMG.logoWhite, x: 2.43, y: 2.56, w: 5.23, h: 3.89 });
+    s.addText("Dorchester Immanuel", { x: 3.95, y: 0.94, w: 3.19, h: 1.78, fontFace: "Calibri", fontSize: 40, bold: true, color: fg, align: "center", valign: "top" });
   } else {
-    s.background = { data: IMG.welcomeBg };
+    if (!d.own) s.background = { data: IMG.welcomeBg };
     s.addText([
       { text: "WELCOME", options: { fontSize: 66, breakLine: true } },
       { text: "TO", options: { fontSize: 54, breakLine: true } },
       { text: "DORCHESTER IMMANUEL", options: { fontSize: 54 } }
-    ], { x: 0.17, y: 0.42, w: 9.67, h: 3.03, fontFace: "Garamond", color: "FFFFFF", align: "center", valign: "top" });
+    ], { x: 0.17, y: 0.42, w: 9.67, h: 3.03, fontFace: "Garamond", color: fg, align: "center", valign: "top" });
     s.addImage({ data: IMG.logo, x: 3.17, y: 3.63, w: 3.48, h: 2.58 });
   }
 }
@@ -773,7 +788,7 @@ $("btn-make").addEventListener("click", async () => {
     const pptx = new PptxGenJS();
     pptx.layout = "LAYOUT_4x3";
     pptx.title = "Sunday " + week.date;
-    for (const d of deckSlides()) { if (d.kind === "welcome") addWelcome(pptx); else await addTextSlide(pptx, d); }
+    for (const d of deckSlides()) { if (d.kind === "welcome") await addWelcome(pptx, d); else await addTextSlide(pptx, d); }
     const blob = await pptx.write({ outputType: "blob" });
     const [y, m, d] = week.date.split("-");
     const name = "Sunday " + Number(m) + "-" + Number(d) + "-" + y + ".pptx";
