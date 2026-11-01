@@ -110,7 +110,7 @@ kbd { font-family: var(--body); font-size: .72rem; font-weight: 700; border: 1px
 
 /* service order: numbered cues with colored type tiles */
 ol.svc { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-ol.svc li { display: grid; grid-template-columns: 22px 34px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 5px 6px 5px 4px; background: var(--card); border: 1px solid var(--line); border-radius: 5px; cursor: pointer; }
+ol.svc li { position: relative; display: grid; grid-template-columns: 22px 34px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 5px 6px 5px 4px; background: var(--card); border: 1px solid var(--line); border-radius: 5px; cursor: pointer; }
 ol.svc li:hover { background: var(--hover); }
 ol.svc li.sel { border-color: var(--accent); background: var(--accent-soft); }
 ol.svc li.live { border-color: var(--live); box-shadow: inset 4px 0 0 var(--live); }
@@ -206,6 +206,51 @@ table.keys-t { border-collapse: collapse; width: 100%; }
 table.keys-t td { padding: 5px 6px; border-bottom: 1px solid var(--line); }
 table.keys-t td:first-child { white-space: nowrap; width: 1%; }
 
+/* Bible book autocomplete */
+.ac { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 25; background: var(--chrome); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 12px 30px rgba(0,0,0,.35); padding: 4px; display: grid; gap: 2px; max-height: 340px; overflow: auto; }
+.ac[hidden] { display: none; }
+.ac[data-mode=grid] { grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.ac-h { grid-column: 1 / -1; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 4px 6px; }
+.ac-i { justify-content: space-between; border: 0; background: none; min-height: 34px; font-weight: 700; }
+.ac[data-mode=grid] .ac-i { justify-content: center; padding: 0; border: 1px solid var(--line); min-height: 32px; }
+.ac-i.on, .ac-i:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.ac-i small { color: inherit; opacity: .7; font-weight: 500; }
+
+/* quick find (Ctrl+K) */
+#pal { margin-top: 10vh; width: min(660px, calc(100vw - 32px)); }
+#pal form { gap: 6px; }
+#pal-q { font-size: 1.2rem; font-weight: 700; min-height: 50px; }
+#pal-list { display: grid; gap: 2px; max-height: 52vh; overflow: auto; }
+#pal-list button { display: grid; grid-template-columns: 28px 1fr auto; text-align: left; justify-content: stretch; border: 0; background: none; min-height: 42px; }
+#pal-list button small { color: var(--muted); font-weight: 500; }
+#pal-list button.on { background: var(--accent); color: var(--accent-ink); }
+#pal-list button.on small { color: inherit; opacity: .8; }
+#pal-list .grp { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); padding: 6px 8px 2px; }
+
+/* Effects: plain CSS/JS versions of ideas from Magic UI (dot pattern, border beam, shimmer button, blur fade)
+   and React Bits (spotlight card, click spark, shiny text). View > Animations turns the moving ones off. */
+body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) 1px, transparent 1.4px); background-size: 18px 18px; }
+.spot { position: relative; isolation: isolate; }
+.spot::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .25s; z-index: 2;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%); }
+.spot:hover::after { opacity: 1; }
+@property --beam { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.beam { padding: 3px; border-radius: 6px; background: conic-gradient(from var(--beam), var(--live) 0deg, #ffc2a8 30deg, var(--live) 70deg, color-mix(in srgb, var(--live) 40%, transparent) 130deg, color-mix(in srgb, var(--live) 40%, transparent) 360deg); animation: beam 4s linear infinite; }
+.beam .screen { outline: 0 !important; border-radius: 3px; }
+@keyframes beam { to { --beam: 360deg; } }
+.shimmer { position: relative; overflow: hidden; }
+.shimmer::before { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.32) 50%, transparent 65%); transform: translateX(-100%); animation: shimmer 3.4s ease-in-out infinite; pointer-events: none; }
+@keyframes shimmer { 55%, 100% { transform: translateX(100%); } }
+.shiny { background: linear-gradient(110deg, var(--ink) 40%, var(--accent) 50%, var(--ink) 60%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 6s linear infinite; }
+@keyframes shine { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+.enter { animation: blurIn .45s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i, 0) * 28ms); }
+@keyframes blurIn { from { opacity: 0; filter: blur(6px); transform: translateY(6px); } }
+.spark { position: fixed; width: 2px; height: 10px; background: var(--accent); border-radius: 2px; pointer-events: none; z-index: 60; transform-origin: 50% 0; animation: spark .45s ease-out forwards; }
+@keyframes spark { from { opacity: 1; transform: rotate(var(--r)) translateY(4px) scaleY(1); } to { opacity: 0; transform: rotate(var(--r)) translateY(22px) scaleY(.2); } }
+html.no-fx .beam, html.no-fx .shimmer::before, html.no-fx .shiny, html.no-fx .enter { animation: none; }
+html.no-fx .shiny { color: var(--ink); background: none; }
+@media (prefers-reduced-motion: reduce) { .beam, .shimmer::before, .shiny, .enter, .spark { animation: none !important; } .shiny { color: var(--ink); background: none; } }
+
 /* the slide itself: drawn at a fixed size (W x H) and scaled to fit wherever it is shown */
 .stage { position: absolute; left: 50%; top: 50%; transform-origin: center; overflow: hidden; background: #000; }
 .stage .bg, .stage .dim { position: absolute; inset: 0; background-size: cover; background-position: center; }
@@ -252,12 +297,14 @@ table.keys-t td:first-child { white-space: nowrap; width: 1%; }
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
   <symbol id="i-keys" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="1.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
   <symbol id="i-live" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></symbol>
 </svg>
 
 <div class="app">
 <nav class="menubar" aria-label="Menu">
-  <span class="brand"><svg class="i" aria-hidden="true"><use href="#i-live"/></svg> Sunday Live</span>
+  <span class="brand"><svg class="i" aria-hidden="true"><use href="#i-live"/></svg> <span class="shiny">Sunday Live</span></span>
   <div class="menu"><button type="button" aria-haspopup="true" aria-expanded="false">File</button>
     <div class="drop" role="menu">
       <button type="button" role="menuitem" data-cmd="new"><svg class="i" aria-hidden="true"><use href="#i-new"/></svg>New service<span></span></button>
@@ -293,6 +340,8 @@ table.keys-t td:first-child { white-space: nowrap; width: 1%; }
       <hr>
       <button type="button" role="menuitem" data-cmd="screen"><svg class="i" aria-hidden="true"><use href="#i-projector"/></svg>Open projector screen<span></span></button>
       <button type="button" role="menuitem" data-cmd="stage"><svg class="i" aria-hidden="true"><use href="#i-stage"/></svg>Open stage view<span></span></button>
+      <hr>
+      <button type="button" role="menuitem" data-cmd="loop"><svg class="i" aria-hidden="true"><use href="#i-loop"/></svg>Loop announcements before service<span></span></button>
     </div></div>
   <div class="menu"><button type="button" aria-haspopup="true" aria-expanded="false">View</button>
     <div class="drop" role="menu">
@@ -302,9 +351,11 @@ table.keys-t td:first-child { white-space: nowrap; width: 1%; }
       <button type="button" role="menuitem" data-cmd="shape169"><svg class="i" aria-hidden="true"><use href="#i-projector"/></svg>Screen shape 16:9 (wide)<span></span></button>
       <hr>
       <button type="button" role="menuitem" data-cmd="look"><svg class="i" aria-hidden="true"><use href="#i-look"/></svg>Change the look…<span></span></button>
+      <button type="button" role="menuitem" data-cmd="fx"><svg class="i" aria-hidden="true"><use href="#i-spark"/></svg><span class="fx-name">Turn animations off</span><span></span></button>
     </div></div>
   <div class="menu"><button type="button" aria-haspopup="true" aria-expanded="false">Help</button>
     <div class="drop" role="menu">
+      <button type="button" role="menuitem" data-cmd="find"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Quick find<kbd>Ctrl+K</kbd></button>
       <button type="button" role="menuitem" data-cmd="keys"><svg class="i" aria-hidden="true"><use href="#i-keys"/></svg>Keyboard shortcuts<kbd>?</kbd></button>
     </div></div>
   <span class="sp"></span>
@@ -335,8 +386,10 @@ table.keys-t td:first-child { white-space: nowrap; width: 1%; }
     <button type="button" class="rb" id="rb-black" data-cmd="black" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-black"/></svg>Black</button>
     <button type="button" class="rb" id="rb-logo" data-cmd="logo" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-logo"/></svg>Logo</button>
     <button type="button" class="rb" id="rb-clear" data-cmd="clear" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-hide"/></svg>Hide words</button>
+    <button type="button" class="rb" id="rb-loop" data-cmd="loop" aria-pressed="false" title="Show the announcement and welcome slides over and over before the service"><svg class="i" aria-hidden="true"><use href="#i-loop"/></svg>Loop</button>
   </div><div class="glbl">Screen</div></div>
   <div class="rgroup"><div class="btns">
+    <button type="button" class="rb go" data-cmd="find" title="Find any song, verse or command (Ctrl+K)"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Quick find</button>
     <button type="button" class="rb go" data-cmd="look"><svg class="i" aria-hidden="true"><use href="#i-look"/></svg>Look</button>
     <button type="button" class="rb go" data-cmd="theme" id="rb-theme"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span class="theme-name">Light mode</span></button>
     <button type="button" class="rb go" data-cmd="keys"><svg class="i" aria-hidden="true"><use href="#i-keys"/></svg>Shortcuts</button>
@@ -391,7 +444,7 @@ table.keys-t td:first-child { white-space: nowrap; width: 1%; }
       <div class="split">
         <div>
           <div class="row">
-            <div class="search grow"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="ref" placeholder="John 3:16, Ps 23, 1 Cor 13:4-7, or words" aria-label="Find a verse" autocomplete="off"></div>
+            <div class="search grow"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="ref" placeholder="John 3:16, Ps 23, 1 Cor 13:4-7, or words" aria-label="Find a verse" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="ac" aria-expanded="false"><div id="ac" class="ac" role="listbox" hidden></div></div>
           </div>
           <div id="ref-out" style="display:grid;gap:8px"></div>
           <div class="row">
@@ -478,6 +531,7 @@ table.keys-t td:first-child { white-space: nowrap; width: 1%; }
             <label class="check"><input type="checkbox" id="l-caps"> ALL CAPITALS</label>
           </div>
           <div class="row"><span>Line up words:</span><span class="row" id="l-align"></span></div>
+          <div class="row" id="l-lessrow"><span id="l-less-lbl">Most lines on a slide:</span><span class="row" id="l-less"></span></div>
           <div class="row" id="l-refrow"><span>Verse name:</span><span class="row" id="l-refpos"></span><label class="check"><input type="checkbox" id="l-nums"> Verse numbers</label></div>
           <h3>Screen</h3>
           <div class="row"><span>Shape:</span><span class="row" id="l-shape"></span></div>
@@ -501,10 +555,10 @@ table.keys-t td:first-child { white-space: nowrap; width: 1%; }
     <div class="scroll" style="padding:0">
       <div class="mon">
         <div class="lbl on"><span>● Live</span><span id="live-name"></span></div>
-        <div class="screen" id="mon-live"></div>
+        <div class="beam"><div class="screen" id="mon-live"></div></div>
         <div class="ctl">
           <button type="button" class="big" id="go-prev"><svg class="i" aria-hidden="true"><use href="#i-prev"/></svg>Back</button>
-          <button type="button" class="big primary" id="go-next">Next<svg class="i" aria-hidden="true"><use href="#i-next"/></svg></button>
+          <button type="button" class="big primary shimmer" id="go-next">Next<svg class="i" aria-hidden="true"><use href="#i-next"/></svg></button>
         </div>
         <div class="ctl3">
           <button type="button" id="m-black" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-black"/></svg><span>Black <kbd>B</kbd></span></button>
@@ -554,6 +608,13 @@ table.keys-t td:first-child { white-space: nowrap; width: 1%; }
     </div>
   </form>
 </dialog>
+<dialog id="pal" aria-label="Quick find">
+  <form method="dialog">
+    <div class="search"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="pal-q" placeholder="Find a song, a verse (jn 3:16) or a command" autocomplete="off" aria-label="Quick find"></div>
+    <div id="pal-list" role="listbox"></div>
+    <p class="hint"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> show now · <kbd>Shift</kbd>+<kbd>Enter</kbd> add to the service · <kbd>Esc</kbd> close</p>
+  </form>
+</dialog>
 <dialog id="help">
   <form method="dialog">
     <h2>Keyboard shortcuts</h2>
@@ -566,6 +627,7 @@ table.keys-t td:first-child { white-space: nowrap; width: 1%; }
       <tr><td><kbd>C</kbd></td><td>Hide the words but keep the background</td></tr>
       <tr><td><kbd>Esc</kbd></td><td>Back to the slide from black, logo or hidden words</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Save / open a service</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Quick find: any song, verse or command</td></tr>
       <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Switch between dark and light mode</td></tr>
       <tr><td>In the Bible box</td><td><kbd>Enter</kbd> shows the verse, <kbd>Shift</kbd>+<kbd>Enter</kbd> adds it to the service</td></tr>
     </table>
@@ -703,9 +765,9 @@ const BGS = [
 const TEXT_COLORS = ["auto", "#ffffff", "#000000", "#fff4d6", "#f5d36b", "#bfe3ff"];
 const FONTS = ["Arial", "Calibri", "Georgia", "Verdana", "Garamond", "Trebuchet MS", "Times New Roman"];
 const LOOK_DEFAULTS = {
-  song: { bg: "alt", dim: 0, color: "auto", font: "Arial", size: 96, bold: false, shadow: false, caps: false, align: "center" },
-  scripture: { bg: "g:night", dim: 35, color: "#ffffff", font: "Georgia", size: 84, bold: false, shadow: true, caps: false, align: "center", refPos: "bottom", nums: true },
-  slide: { bg: "i:welcomeBg", dim: 20, color: "#ffffff", font: "Georgia", size: 80, bold: false, shadow: true, caps: false, align: "center" }
+  song: { bg: "alt", dim: 0, color: "auto", font: "Arial", size: 96, bold: false, shadow: false, caps: false, align: "center", lines: 0 },
+  scripture: { bg: "g:night", dim: 35, color: "#ffffff", font: "Georgia", size: 84, bold: false, shadow: true, caps: false, align: "center", refPos: "bottom", nums: true, words: 0 },
+  slide: { bg: "i:welcomeBg", dim: 20, color: "#ffffff", font: "Georgia", size: 80, bold: false, shadow: true, caps: false, align: "center", lines: 0 }
 };
 const LOOK_NAMES = { song: "Songs", scripture: "Scripture", slide: "Other slides" };
 let look = load(KEY_LOOK, {});
@@ -754,22 +816,52 @@ function fmtTime(t) { if (!t) return ""; const [h, m] = t.split(":").map(Number)
 
 // Every slide is a plain object the painter understands: {kind, look, ordinal, body|html, title, ref, ...}
 function songOrdinal(idx) { let n = 0; for (let i = 0; i < idx; i++) if (svc.items[i].type === "song" || svc.items[i].type === "hymn") n++; return n; }
+// "Less text per slide": songs and slides keep at most N lines, scripture at most N words (long verses split at commas and periods).
+function chunkLines(text, n) {
+  if (!n) return [text];
+  const lines = text.split("\n"), out = [];
+  for (let i = 0; i < lines.length; i += n) out.push(lines.slice(i, i + n).join("\n"));
+  return out.filter(x => x.trim()).length ? out.filter(x => x.trim()) : [text];
+}
+function splitWords(text, max) {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (!max || words.length <= max) return [text];
+  const parts = Math.ceil(words.length / max), target = Math.ceil(words.length / parts), out = [];
+  let cur = [];
+  words.forEach((w, i) => {
+    cur.push(w);
+    const left = words.length - i - 1;
+    if (left && (cur.length >= target + 4 || (cur.length >= target * 0.6 && /[,;:.!?)]$/.test(w) && left >= 4) || (cur.length >= target && !/[,;:.!?)]$/.test(w) && left >= 4 && cur.length >= target + 4)))
+      { out.push(cur.join(" ")); cur = []; }
+  });
+  if (cur.length) out.push(cur.join(" "));
+  return out;
+}
 function scriptureSlides(it, ordinal) {
   const vs = versesOf(it.tr, it).filter(x => x.t);
-  const per = +it.vps || 1, out = [];
-  for (let i = 0; i < vs.length; i += per) {
-    const grp = vs.slice(i, i + per), a = grp[0], z = grp[grp.length - 1];
-    const sub = { b: it.b, c: a.c, v: a.v, c2: z.c, v2: z.v };
-    out.push({ kind: "scripture", look: "scripture", ordinal, verses: grp, ref: refText(sub) + " " + it.tr, pos: sub, tr: it.tr, label: refText(sub) });
-  }
+  const per = +it.vps || 1, max = look.scripture.words || 0, out = [];
+  const push = (grp, part, parts) => {
+    const a = grp[0], z = grp[grp.length - 1], sub = { b: it.b, c: a.c, v: a.v, c2: z.c, v2: z.v };
+    const lbl = refText(sub) + (parts > 1 ? " (" + (part + 1) + "/" + parts + ")" : "");
+    out.push({ kind: "scripture", look: "scripture", ordinal, verses: grp, ref: refText(sub) + " " + it.tr, pos: sub, tr: it.tr, label: lbl });
+  };
+  let grp = [], words = 0;
+  const flush = () => { if (grp.length) push(grp, 0, 1); grp = []; words = 0; };
+  vs.forEach(x => {
+    const n = x.t.split(/\s+/).length;
+    if (max && n > max) { flush(); const parts = splitWords(x.t, max); parts.forEach((t, k) => push([{ c: x.c, v: x.v, t }], k, parts.length)); return; }
+    if (grp.length && (grp.length >= per || (max && words + n > max))) flush();
+    grp.push(x); words += n;
+  });
+  flush();
   return out.length ? out : [{ kind: "scripture", look: "scripture", ordinal, verses: [], ref: refText(it), pos: it, tr: it.tr, label: refText(it) }];
 }
 function itemSlides(it, idx) {
   const ordinal = idx == null ? 0 : songOrdinal(idx);
-  if (it.type === "song") return it.s.map((s, i) => ({ kind: "text", look: "song", ordinal, body: s, label: (i + 1) + "" }));
+  if (it.type === "song") return it.s.flatMap((s, i) => { const ch = chunkLines(s, look.song.lines); return ch.map((t, k) => ({ kind: "text", look: "song", ordinal, body: t, label: (i + 1) + (ch.length > 1 ? String.fromCharCode(97 + k) : "") })); });
   if (it.type === "hymn") return [{ kind: "text", look: "song", ordinal, body: it.s[0] || it.t, label: "Title" }];
   if (it.type === "scripture") return scriptureSlides(it, ordinal);
-  if (it.type === "slide") return [{ kind: "text", look: "slide", ordinal: 0, title: it.title, body: it.text, bg: it.bg, label: "Slide" }];
+  if (it.type === "slide") { const ch = chunkLines(it.text || "", look.slide.lines); return ch.map((t, k) => ({ kind: "text", look: "slide", ordinal: 0, title: k ? "" : it.title, body: t, bg: it.bg, label: ch.length > 1 ? "Slide " + (k + 1) : "Slide" })); }
   if (it.type === "welcome") return [{ kind: it.style, label: itemTitle(it) }];
   if (it.type === "countdown") return [{ kind: "countdown", time: it.time, label: "Countdown" }];
   return [];
@@ -902,7 +994,8 @@ function prevPos() {
   if (live.i > 0) { const n = itemSlides(svc.items[live.i - 1], live.i - 1).length; return { i: live.i - 1, s: n - 1 }; }
   return null;
 }
-function goLive(pos, keepMode) {
+function goLive(pos, keepMode, fromLoop) {
+  if (!fromLoop && loopTimer) toggleLoop();
   live = pos; if (!keepMode && mode !== "black") mode = mode === "clear" ? "clear" : "";
   if (mode === "logo") mode = "";
   if (pos && !pos.direct) { sel = pos.i; }
@@ -920,24 +1013,31 @@ function goPrev() {
 function verseStep(d) {
   const sl = liveSlide();
   if (!sl || sl.kind !== "scripture") return d > 0 ? goNext() : goPrev();
+  if (live.direct && sl.parts > 1 && sl.part + d >= 0 && sl.part + d < sl.parts) return goLive({ direct: directVerse(sl.tr, sl.pos, sl.part + d) });
   const p = sl.pos, from = d > 0 ? { b: p.b, c: p.c2, v: p.v2 } : { b: p.b, c: p.c, v: p.v };
   let n = stepVerse(from.b, from.c, from.v, d);
   while (n && !(bibles[sl.tr] || bibles.KJV)[n.b][n.c - 1][n.v - 1]) n = stepVerse(n.b, n.c, n.v, d);
   if (!n) return;
-  showVerseDirect(sl.tr, { b: n.b, c: n.c, v: n.v, c2: n.c, v2: n.v }, true);
+  showVerseDirect(sl.tr, { b: n.b, c: n.c, v: n.v, c2: n.c, v2: n.v }, true, d < 0 ? -1 : 0);
 }
 function nextVerse(sl) {
+  if (sl.parts > 1 && sl.part + 1 < sl.parts) return directVerse(sl.tr, sl.pos, sl.part + 1);
   const B = bibles[sl.tr] || bibles.KJV;
   let n = stepVerse(sl.pos.b, sl.pos.c2, sl.pos.v2, 1);
   while (n && !B[n.b][n.c - 1][n.v - 1]) n = stepVerse(n.b, n.c, n.v, 1);
   return n && directVerse(sl.tr, { b: n.b, c: n.c, v: n.v, c2: n.c, v2: n.v });
 }
-function directVerse(tr, p) {
-  const verses = versesOf(tr, p).filter(x => x.t);
-  return { kind: "scripture", look: "scripture", ordinal: 0, verses, ref: refText(p) + " " + tr, pos: p, tr, label: refText(p) };
+function directVerse(tr, p, part) {
+  let verses = versesOf(tr, p).filter(x => x.t), parts = 1;
+  if (verses.length === 1 && look.scripture.words) {
+    const bits = splitWords(verses[0].t, look.scripture.words);
+    parts = bits.length; part = part < 0 ? parts - 1 : Math.min(part || 0, parts - 1);
+    verses = [{ c: verses[0].c, v: verses[0].v, t: bits[part] }];
+  } else part = 0;
+  return { kind: "scripture", look: "scripture", ordinal: 0, verses, ref: refText(p) + " " + tr, pos: p, tr, part, parts, label: refText(p) + (parts > 1 ? " (" + (part + 1) + "/" + parts + ")" : "") };
 }
-function showVerseDirect(tr, p, stepping) {
-  goLive({ direct: directVerse(tr, p) });
+function showVerseDirect(tr, p, stepping, part) {
+  goLive({ direct: directVerse(tr, p, part) });
   if (bibleView.b !== p.b || bibleView.c !== p.c) { bibleView.b = p.b; bibleView.c = p.c; renderChapter(); }
   else markLiveVerses();
   scrollToVerse(p.v);
@@ -1046,7 +1146,7 @@ function renderSvc() {
   svc.items.forEach((it, i) => {
     const count = itemSlides(it, i).length;
     const sub = it.type === "song" ? count + (count === 1 ? " slide" : " slides") : it.type === "hymn" ? "Hymn title" : it.type === "scripture" ? count + (count === 1 ? " slide" : " slides") : "";
-    const li = el("li", { class: (i === sel ? "sel " : "") + (live && !live.direct && live.i === i ? "live" : ""), draggable: "true", title: "Click to see its slides. Double-click to show the first one." },
+    const li = el("li", { class: "spot " + (it.id === justAdded ? "enter " : "") + (i === sel ? "sel " : "") + (live && !live.direct && live.i === i ? "live" : ""), draggable: "true", title: "Click to see its slides. Double-click to show the first one." },
       el("span", { class: "num", text: i + 1 }),
       el("span", { class: "ic", "aria-hidden": "true", style: "--c:var(--c-" + (it.type === "welcome" && it.style === "black" ? "welcome" : it.type) + ")" }, ico(it.type === "welcome" && it.style === "black" ? "black" : it.type === "welcome" && it.style === "photo" ? "image" : ICONS[it.type] || "slide")),
       el("div", { class: "t" }, itemTitle(it), sub ? el("small", { text: sub }) : null),
@@ -1076,8 +1176,9 @@ function removeItem(i) {
   if (sel >= svc.items.length) sel = Math.max(0, svc.items.length - 1);
   persist(); updateLive(false); renderSlides();
 }
+let justAdded = null;
 function addItem(it, show) {
-  it.id = newId();
+  it.id = newId(); justAdded = it.id; setTimeout(() => { if (justAdded === it.id) justAdded = null; }, 600);
   const at = svc.items.length; svc.items.push(it); sel = at; persist();
   if (show) goLive({ i: at, s: 0 }); else updateLive(false);
   renderSlides();
@@ -1086,7 +1187,7 @@ function addItem(it, show) {
 
 function makeThumb(sl, caption, onClick, isLive) {
   const scr = el("div", { class: "screen" }); sizeScreen(scr);
-  const b = el("button", { type: "button", class: "thumb" + (isLive ? " live" : "") }, scr, el("div", { class: "cap" }, el("span", { text: caption }), isLive ? el("span", { text: "LIVE" }) : null));
+  const b = el("button", { type: "button", class: "thumb spot enter" + (isLive ? " live" : ""), style: "--i:" + Math.min(thumbQueue.length, 14) }, scr, el("div", { class: "cap" }, el("span", { text: caption }), isLive ? el("span", { text: "LIVE" }) : null));
   b.addEventListener("click", onClick);
   thumbQueue.push(() => paint(scr, sl, "", {}));
   return b;
@@ -1094,7 +1195,7 @@ function makeThumb(sl, caption, onClick, isLive) {
 let thumbQueue = [];
 function flushThumbs() { const q = thumbQueue; thumbQueue = []; requestAnimationFrame(() => q.forEach(f => f())); }
 function renderSlides() {
-  const box = $("thumbs"); box.innerHTML = ""; $("slides-acts").innerHTML = "";
+  const box = $("thumbs"), again = box.dataset.shown === (svc.items[sel] || {}).id; box.innerHTML = ""; $("slides-acts").innerHTML = "";
   const it = svc.items[sel];
   if (!it) { $("slides-title").textContent = "Pick something in the service order to see its slides."; return; }
   $("slides-title").textContent = itemTitle(it);
@@ -1108,7 +1209,8 @@ function renderSlides() {
   }
   if (it.type === "slide") $("slides-acts").append(el("button", { type: "button", class: "small", on: { click: () => editSlideItem(sel) } }, ico("edit"), "Change"));
   itemSlides(it, sel).forEach((sl, s) => box.append(makeThumb(sl, sl.label || String(s + 1), () => goLive({ i: sel, s }), live && !live.direct && live.i === sel && live.s === s)));
-  box.dataset.item = sel;
+  box.dataset.item = sel; box.dataset.shown = it.id;
+  if (again) box.querySelectorAll(".enter").forEach(b => b.classList.remove("enter")); // only animate when a different item opens
   flushThumbs();
 }
 function markLiveThumbs() {
@@ -1298,12 +1400,82 @@ function refGo(p, show) {
   if (show) showVerseDirect(bibleTr(), p);
   else { addItem(Object.assign({ type: "scripture", tr: bibleTr(), vps: +bibleView.vps || 1 }, p)); addRecent(p); }
 }
-$("ref").addEventListener("input", onRefInput);
+/* Book autocomplete: "1 th" offers 1 Thessalonians, "thes" offers both; after a book, pick a chapter, then a verse. */
+const normBook = t => t.toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^(third|iii)(?=[a-z]{2})/, "3").replace(/^(second|ii)(?=[a-z]{2})/, "2").replace(/^(first|i)(?=[a-z]{2})/, "1");
+const BOOK_KEYS = BOOKS.map(b => normBook(b));
+let acItems = [], acIdx = 0;
+function bookMatches(q) {
+  const k = normBook(q); if (!k) return [];
+  const hits = new Set();
+  if (k in ALIASES) hits.add(ALIASES[k]);
+  BOOK_KEYS.forEach((b, i) => { if (b.startsWith(k)) hits.add(i); });
+  BOOK_KEYS.forEach((b, i) => { if (b.replace(/^[1-3]/, "").startsWith(k)) hits.add(i); });
+  return [...hits].slice(0, 7);
+}
+function acShow(items, mode) {
+  acItems = items; acIdx = 0;
+  const box = $("ac"); box.innerHTML = ""; box.dataset.mode = mode || "";
+  box.hidden = !items.length; $("ref").setAttribute("aria-expanded", String(!!items.length));
+  if (!items.length) return;
+  if (mode === "grid") box.append(el("div", { class: "ac-h", text: items.head }));
+  items.forEach((it, i) => {
+    const b = el("button", { type: "button", role: "option", class: "ac-i" + (i === 0 ? " on" : ""), tabindex: "-1" }, it.label, it.sub ? el("small", { text: it.sub }) : null);
+    b.addEventListener("mousedown", e => { e.preventDefault(); acPick(i); });
+    box.append(b);
+  });
+}
+function acUpdate() {
+  const v = $("ref").value;
+  if (!bibles.KJV) return acShow([]);
+  // "John " -> chapters; "John 3:" -> verses
+  const m = v.match(/^\s*(.*?[a-zA-Z])\s+(?:(\d+)\s*[:.]\s*)?$/);
+  if (m && /\s$|[:.]\s*$/.test(v)) {
+    const b = BOOK_KEYS.indexOf(normBook(m[1])) >= 0 ? BOOK_KEYS.indexOf(normBook(m[1])) : (normBook(m[1]) in ALIASES ? ALIASES[normBook(m[1])] : -1);
+    if (b >= 0 && !m[2]) {
+      if (ONE_CHAPTER.has(b)) return acShow([]);
+      const items = bibles.KJV[b].map((_, i) => ({ label: String(i + 1), fill: BOOKS[b] + " " + (i + 1) + ":" }));
+      items.head = BOOKS[b] + ": pick a chapter"; return acShow(items, "grid");
+    }
+    if (b >= 0 && m[2] && bibles.KJV[b][+m[2] - 1]) {
+      const c = +m[2], items = bibles.KJV[b][c - 1].map((_, i) => ({ label: String(i + 1), fill: BOOKS[b] + " " + c + ":" + (i + 1), go: true }));
+      items.head = BOOKS[b] + " " + c + ": pick a verse"; return acShow(items, "grid");
+    }
+    return acShow([]);
+  }
+  if (/\d\s*$/.test(v.replace(/^\s*[1-3]\s*/, "")) || !/[a-z]/i.test(v) || /\s$/.test(v)) return acShow([]);
+  const hits = bookMatches(v);
+  if (hits.length === 1 && normBook(v) === BOOK_KEYS[hits[0]]) return acShow([]);
+  acShow(hits.map(i => ({ label: BOOKS[i], sub: ONE_CHAPTER.has(i) ? "1 chapter" : bibles.KJV[i].length + " chapters", fill: BOOKS[i] + " " })));
+}
+function acPick(i) {
+  const it = acItems[i]; if (!it) return;
+  $("ref").value = it.fill; $("ref").focus();
+  onRefInput();
+  if (it.go) { acShow([]); const p = parseRef(it.fill); if (p) showVerseDirect(bibleTr(), p); }
+  else acUpdate();
+}
+function acMove(d) {
+  if (!acItems.length) return;
+  const grid = $("ac").dataset.mode === "grid", cols = grid ? 10 : 1;
+  acIdx = Math.max(0, Math.min(acItems.length - 1, acIdx + d * (Math.abs(d) === 1 && grid ? 1 : cols)));
+  [...$("ac").querySelectorAll(".ac-i")].forEach((b, i) => { b.classList.toggle("on", i === acIdx); if (i === acIdx) b.scrollIntoView({ block: "nearest" }); });
+}
+$("ref").addEventListener("input", () => { onRefInput(); acUpdate(); });
+$("ref").addEventListener("focus", acUpdate);
+$("ref").addEventListener("blur", () => setTimeout(() => acShow([]), 120));
 $("ref").addEventListener("keydown", e => {
+  if (!$("ac").hidden) {
+    const grid = $("ac").dataset.mode === "grid";
+    if (e.key === "ArrowDown") { e.preventDefault(); e.stopPropagation(); return acMove(grid ? 10 : 1); }
+    if (e.key === "ArrowUp") { e.preventDefault(); e.stopPropagation(); return acMove(grid ? -10 : -1); }
+    if (grid && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { e.preventDefault(); e.stopPropagation(); return acMove(e.key === "ArrowRight" ? 1 : -1); }
+    if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) { e.preventDefault(); return acPick(acIdx); }
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); return acShow([]); }
+  }
   if ((e.key === "ArrowDown" || e.key === "ArrowUp") && (liveSlide() || {}).kind === "scripture") { e.preventDefault(); return verseStep(e.key === "ArrowDown" ? 1 : -1); }
   if (e.key !== "Enter") return;
   const p = bibles.KJV && parseRef($("ref").value); if (!p) return;
-  e.preventDefault(); refGo(p, !e.shiftKey); $("ref").select();
+  e.preventDefault(); acShow([]); refGo(p, !e.shiftKey); $("ref").select();
 });
 let recent = load(KEY_RECENT, []);
 function addRecent(p) {
@@ -1409,6 +1581,10 @@ function renderLook() {
   const al = $("l-align"); al.innerHTML = "";
   [["left", "Left"], ["center", "Middle"], ["right", "Right"]].forEach(([v, n]) => al.append(el("button", { type: "button", class: "small", "aria-pressed": lk.align === v, text: n, on: { click: () => { lk.align = v; lookChanged(); } } })));
   $("l-refrow").hidden = lookWhich !== "scripture";
+  const less = $("l-less"); less.innerHTML = "";
+  const isS = lookWhich === "scripture", opts = isS ? [[0, "Any"], [20, "20 words"], [30, "30 words"], [45, "45 words"]] : [[0, "Any"], [2, "2"], [3, "3"], [4, "4"], [6, "6"]];
+  $("l-less-lbl").textContent = isS ? "Shorter slides, at most:" : "Most lines on a slide:";
+  opts.forEach(([v, n]) => less.append(el("button", { type: "button", class: "small", "aria-pressed": (isS ? lk.words : lk.lines) === v, text: n, on: { click: () => { if (isS) lk.words = v; else lk.lines = v; if (live && !live.direct) live.s = 0; lookChanged(); } } })));
   if (lookWhich === "scripture") {
     const rp = $("l-refpos"); rp.innerHTML = "";
     [["bottom", "Below"], ["top", "Above"], ["none", "Hide"]].forEach(([v, n]) => rp.append(el("button", { type: "button", class: "small", "aria-pressed": lk.refPos === v, text: n, on: { click: () => { lk.refPos = v; lookChanged(); } } })));
@@ -1559,7 +1735,7 @@ const CMDS = {
   screen: () => $("btn-screen").click(), stage: () => $("btn-stage").click(),
   theme: toggleTheme, look: () => showTab("look"),
   shape43: () => { look.shape = "4:3"; applyShape(); lookChanged(); }, shape169: () => { look.shape = "16:9"; applyShape(); lookChanged(); },
-  keys: () => $("help").showModal()
+  keys: () => $("help").showModal(), find: () => openPal(), loop: () => toggleLoop(), fx: () => toggleFx()
 };
 function closeMenus(except) { document.querySelectorAll(".menu.open").forEach(m => { if (m !== except) { m.classList.remove("open"); m.firstElementChild.setAttribute("aria-expanded", "false"); } }); }
 document.querySelectorAll(".menu").forEach(m => {
@@ -1577,9 +1753,93 @@ document.querySelectorAll("[data-cmd]").forEach(b => b.addEventListener("click",
 document.addEventListener("keydown", e => {
   if ((e.ctrlKey || e.metaKey) && !e.altKey) {
     const k = e.key.toLowerCase();
-    if (k === "s") { e.preventDefault(); CMDS.save(); } else if (k === "o") { e.preventDefault(); CMDS.open(); } else if (k === "l") { e.preventDefault(); toggleTheme(); }
+    if (k === "k") { e.preventDefault(); openPal(); } else if (k === "s") { e.preventDefault(); CMDS.save(); } else if (k === "o") { e.preventDefault(); CMDS.open(); } else if (k === "l") { e.preventDefault(); toggleTheme(); }
   } else if (e.key === "?" && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) CMDS.keys();
 });
+
+/* ---------- announcement loop ---------- */
+let loopTimer = null, loopAt = -1;
+function loopItems() { return svc.items.map((it, i) => ["slide", "welcome", "countdown"].includes(it.type) && it.style !== "black" ? i : -1).filter(i => i >= 0); }
+function toggleLoop() {
+  if (loopTimer) { clearInterval(loopTimer); loopTimer = null; toast("Loop stopped."); }
+  else {
+    const list = loopItems();
+    if (!list.length) { toast("Add some announcement or welcome slides to the service first."); return; }
+    loopAt = -1;
+    const step = () => {
+      const l = loopItems(); if (!l.length) return toggleLoop();
+      const cur = live && !live.direct ? live.i : -1;
+      const nextI = l.find(i => i > cur) ?? l[0];
+      const it = svc.items[nextI], n = itemSlides(it, nextI).length;
+      if (cur === nextI && live.s + 1 < n) goLive({ i: cur, s: live.s + 1 }, false, true); else goLive({ i: nextI, s: 0 }, false, true);
+    };
+    step(); loopTimer = setInterval(step, (look.loopSecs || 8) * 1000);
+    toast("Looping the announcement and welcome slides every " + (look.loopSecs || 8) + " seconds. Press any slide or Next to stop.");
+  }
+  $("rb-loop").setAttribute("aria-pressed", !!loopTimer);
+}
+
+/* ---------- quick find (Ctrl+K) ---------- */
+const CMD_NAMES = { screen: ["projector", "Open projector screen"], stage: ["stage", "Open stage view"], black: ["black", "Black screen"], logo: ["logo", "Logo screen"], clear: ["hide", "Hide words"],
+  loop: ["loop", "Loop announcements"], save: ["save", "Save service"], open: ["open", "Open service"], new: ["new", "New service"], import: ["import", "Bring in this week's songs from Sunday Slides"],
+  theme: ["sun", "Switch dark / light mode"], look: ["look", "Change the look"], newsong: ["edit", "Type in a new song"], hymn: ["hymn", "Hymn from the book"], countdown: ["countdown", "Countdown to service"],
+  welcome: ["welcome", "Add welcome slide"], shape43: ["projector", "Screen shape 4:3"], shape169: ["projector", "Screen shape 16:9"], keys: ["keys", "Keyboard shortcuts"] };
+let palItems = [], palIdx = 0;
+function openPal() { closeMenus(); $("pal-q").value = ""; renderPal(); $("pal").showModal(); $("pal-q").focus(); }
+function renderPal() {
+  const q = $("pal-q").value.trim().toLowerCase(), list = $("pal-list"); list.innerHTML = ""; palItems = [];
+  const add = (grp, icon, label, sub, show, addIt) => palItems.push({ grp, icon, label, sub, show, add: addIt });
+  const p = q && bibles.KJV && parseRef(q);
+  if (p) add("Bible", "scripture", refText(p) + " (" + bibleTr() + ")", versesOf(bibleTr(), p).map(v => v.t).join(" ").slice(0, 90), () => showVerseDirect(bibleTr(), p), () => refGo(p, false));
+  svc.items.forEach((it, i) => { const t = itemTitle(it); if (!q || t.toLowerCase().includes(q)) add("In this service", ICONS[it.type] || "slide", t, "#" + (i + 1), () => goLive({ i, s: 0 }), null); });
+  if (q) library().filter(s => s.t.toLowerCase().includes(q) || (q.length > 3 && s.s.join(" ").toLowerCase().includes(q)))
+    .sort((a, b) => b.t.toLowerCase().includes(q) - a.t.toLowerCase().includes(q)).slice(0, 8)
+    .forEach(s => add("Songs", s.k === "hymn" ? "hymn" : "song", s.t, s.k === "hymn" ? "Hymn title" : (s.s[0] || "").split("\n")[0], () => addSong(s, true), () => addSong(s)));
+  for (const k in CMD_NAMES) { const [icon, label] = CMD_NAMES[k]; if (!q || label.toLowerCase().includes(q)) add("Commands", icon, label, "", () => CMDS[k](), null); }
+  palItems = palItems.slice(0, 40); palIdx = 0;
+  let grp = "";
+  palItems.forEach((it, i) => {
+    if (it.grp !== grp) { grp = it.grp; list.append(el("div", { class: "grp", text: grp })); }
+    const b = el("button", { type: "button", class: i === 0 ? "on" : "", role: "option" }, ico(it.icon), el("span", {}, it.label, it.sub ? el("small", { text: " · " + it.sub }) : null), it.add ? el("small", { text: "Shift+Enter adds" }) : el("span"));
+    b.addEventListener("click", e => runPal(i, e.shiftKey));
+    list.append(b);
+  });
+  if (!palItems.length) list.append(el("div", { class: "empty", text: "Nothing found." }));
+}
+function runPal(i, adding) {
+  const it = palItems[i]; if (!it) return;
+  $("pal").close();
+  if (adding && it.add) it.add(); else it.show();
+}
+$("pal-q").addEventListener("input", renderPal);
+$("pal-q").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault(); palIdx = Math.max(0, Math.min(palItems.length - 1, palIdx + (e.key === "ArrowDown" ? 1 : -1)));
+    [...$("pal-list").querySelectorAll("button")].forEach((b, i) => { b.classList.toggle("on", i === palIdx); if (i === palIdx) b.scrollIntoView({ block: "nearest" }); });
+  } else if (e.key === "Enter") { e.preventDefault(); runPal(palIdx, e.shiftKey); }
+});
+
+/* ---------- effects ---------- */
+const KEY_FX = "sundayLive.fx.v1";
+function applyFx(on) { document.documentElement.classList.toggle("no-fx", !on); document.querySelectorAll(".fx-name").forEach(n => n.textContent = on ? "Turn animations off" : "Turn animations on"); }
+function toggleFx() { const on = document.documentElement.classList.contains("no-fx"); applyFx(on); save(KEY_FX, on); }
+applyFx(load(KEY_FX, true));
+// Spotlight: the hovered card gets a soft glow that follows the mouse.
+document.addEventListener("pointermove", e => {
+  const c = e.target.closest && e.target.closest(".spot"); if (!c) return;
+  const r = c.getBoundingClientRect(); c.style.setProperty("--mx", (e.clientX - r.left) + "px"); c.style.setProperty("--my", (e.clientY - r.top) + "px");
+});
+// Click spark on the main buttons.
+document.addEventListener("pointerdown", e => {
+  const b = e.target.closest && e.target.closest("button.primary, .rb, .ctl3 button");
+  if (!b || document.documentElement.classList.contains("no-fx") || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  for (let k = 0; k < 8; k++) {
+    const s = document.createElement("span"); s.className = "spark";
+    s.style.left = e.clientX - 1 + "px"; s.style.top = e.clientY + "px"; s.style.setProperty("--r", (k * 45) + "deg");
+    document.body.append(s); setTimeout(() => s.remove(), 500);
+  }
+});
+document.querySelectorAll(".rb, .addrow button, .ctl button, .ctl3 button").forEach(b => b.classList.add("spot"));
 
 /* ---------- start ---------- */
 function startUp() {
