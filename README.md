@@ -12,6 +12,10 @@ There is nothing to install: open the page, pick the songs, and press **Make my 
 2. **Choose how the words look.** Pick the background (black and white taking turns is the default), the size of the words, the letters, and bold. The preview shows each slide as it will look.
 3. **Welcome and announcements.** The Welcome slide goes at the start and end (black with logo, or the church photo). Each announcement becomes its own slide after the Welcome slide.
 
+4. **Look over every slide.** The whole PowerPoint is shown in order. Tap any slide to give it its own background (a color, a soft gradient, the church pictures, or your own picture), for that slide only or for every slide of the song.
+
+**Most lines on one slide** (in step 2) splits long slides so the words can be bigger.
+
 **Make my PowerPoint** downloads one 4:3 deck named like `Sunday 11-1-2026.pptx`. The words shrink automatically so every slide fits.
 
 Changes and new songs are saved in the browser that made them. **Save a backup of my songs** downloads a file that **Restore from a backup** can load on another computer or browser.
@@ -24,13 +28,23 @@ Changes and new songs are saved in the browser that made them. **Save a backup o
 2. **Open projector screen** opens a second window. Drag it onto the projector and double-click it to fill the screen. In Chrome or Edge, if the computer allows it, the window opens on the projector by itself. **Stage view** opens a window for the musicians or the pastor. It shows the words on screen now, the next slide, and a clock.
 3. **Run it.** Click any slide to show it, or use the keys: <kbd>→</kbd>/<kbd>Space</kbd>/<kbd>Page Down</kbd> for next, <kbd>←</kbd>/<kbd>Page Up</kbd> for back (so a presentation clicker works), <kbd>B</kbd> for a black screen, <kbd>L</kbd> for the logo, and <kbd>C</kbd> to hide the words but keep the background.
 
-**Bible:** type a reference such as `jn 3:16`, `Ps 23`, `1 cor 13:4-7` or `Rom 8:38-9:2`, then press <kbd>Enter</kbd> to show it or <kbd>Shift</kbd>+<kbd>Enter</kbd> to add it to the service. You can also type a few words to find a verse. While scripture is on screen, <kbd>↑</kbd>/<kbd>↓</kbd> move one verse back or forward through the Bible. The translation can be switched while a verse is showing. The page includes the **KJV** and the **Berean Standard Bible**. Both are public domain. The NKJV, NIV and ESV are copyrighted and can't be included.
+**Bible:** start typing a book and it offers matches as you type (`1 th` → 1 Thessalonians, `thes` → both letters). Press <kbd>Tab</kbd> or <kbd>Enter</kbd> to take one, then pick a chapter and a verse from the buttons that appear. You can also type a whole reference such as `jn 3:16`, `Ps 23`, `1 cor 13:4-7` or `Rom 8:38-9:2`, then press <kbd>Enter</kbd> to show it or <kbd>Shift</kbd>+<kbd>Enter</kbd> to add it to the service. You can also type a few words to find a verse. While scripture is on screen, <kbd>↑</kbd>/<kbd>↓</kbd> move one verse back or forward through the Bible. The translation can be switched while a verse is showing. The page includes the **KJV** and the **Berean Standard Bible**. Both are public domain. The NKJV, NIV and ESV are copyrighted and can't be included.
+
+**Quick find:** <kbd>Ctrl</kbd>+<kbd>K</kbd> finds any song, verse, item in the service or command. <kbd>Enter</kbd> shows it and <kbd>Shift</kbd>+<kbd>Enter</kbd> adds it.
+
+**Loop:** before the service, **Loop** cycles through the announcement and welcome slides every 8 seconds until you press a slide or Next.
+
+**Shorter slides:** in the Look tab, songs and other slides can be limited to 2, 3, 4 or 6 lines, and scripture to about 20, 30 or 45 words. Long verses are split at commas and periods, and <kbd>↓</kbd> walks through the parts.
 
 **Look:** songs, scripture and other slides each have their own background (colors, gradients, the church pictures, or your own picture), word color, letters, size, shadow and alignment. Changes show on the projector right away. The screen shape can be 4:3 or 16:9.
 
 **Menus and toolbar:** like MediaShout, the page has a File / Insert / Live / View / Help menu bar and a toolbar of large icon buttons. It starts in dark mode. **View → Light mode** (or <kbd>Ctrl</kbd>+<kbd>L</kbd>) switches it, and each computer remembers its choice. **Help → Keyboard shortcuts** (or <kbd>?</kbd>) lists the keys.
 
 **Save service** downloads the service order (with its look and pictures) as a file. Open that file on the church computer with **Open service**. Song changes are shared with the Sunday Slides builder when both pages are opened in the same browser.
+
+## Design credits
+
+Both pages borrow ideas from [Magic UI](https://github.com/magicuidesign/magicui) (MIT: dot pattern, border beam, shimmer button, blur fade) and [React Bits](https://github.com/DavidHDev/react-bits) (MIT + Commons Clause: spotlight card, click spark, shiny text). Those libraries are React components. Here the effects are rewritten in a few lines of plain CSS and JavaScript, so the pages stay single files that work offline. In Sunday Live, **View → Turn animations off** stops the moving effects on a slow computer. Both pages also respect the computer's "reduce motion" setting.
 
 ## How it's built
 
