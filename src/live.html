@@ -135,6 +135,7 @@ ol.svc .acts svg.i { width: 15px; height: 15px; }
 .thumb { justify-content: stretch; align-items: stretch; padding: 0; border: 2px solid var(--line); border-radius: 5px; overflow: hidden; display: grid; background: #000; text-align: left; min-height: 0; gap: 0; }
 .thumb:hover { border-color: var(--accent); }
 .thumb.live { border-color: var(--live); }
+.thumb.cue:not(.live) { border-color: var(--accent, #f5d36b); border-style: dashed; }
 .thumb .cap { background: var(--card); color: var(--muted); font-size: .74rem; font-weight: 700; padding: 2px 6px; display: flex; justify-content: space-between; gap: 6px; }
 .thumb.live .cap { background: var(--live); color: var(--live-ink); }
 .screen { position: relative; overflow: hidden; background: #000; width: 100%; }
@@ -321,8 +322,9 @@ html.no-fx .shiny { color: var(--ink); background: none; }
     </div></div>
   <div class="menu"><button type="button" aria-haspopup="true" aria-expanded="false">Live</button>
     <div class="drop" role="menu">
-      <button type="button" role="menuitem" data-cmd="next"><svg class="i" aria-hidden="true"><use href="#i-next"/></svg>Next slide<kbd>→</kbd></button>
-      <button type="button" role="menuitem" data-cmd="prev"><svg class="i" aria-hidden="true"><use href="#i-prev"/></svg>Previous slide<kbd>←</kbd></button>
+      <button type="button" role="menuitem" data-cmd="next"><svg class="i" aria-hidden="true"><use href="#i-next"/></svg>Show next slide<kbd>Space</kbd></button>
+      <button type="button" role="menuitem" data-cmd="monitor"><svg class="i" aria-hidden="true"><use href="#i-projector"/></svg>Projector to other monitor<kbd>F2</kbd></button>
+      <button type="button" role="menuitem" data-cmd="prev"><svg class="i" aria-hidden="true"><use href="#i-prev"/></svg>Previous slide<kbd>PgUp</kbd></button>
       <button type="button" role="menuitem" data-cmd="vdown"><svg class="i" aria-hidden="true"><use href="#i-down"/></svg>Next verse<kbd>↓</kbd></button>
       <button type="button" role="menuitem" data-cmd="vup"><svg class="i" aria-hidden="true"><use href="#i-up"/></svg>Verse before<kbd>↑</kbd></button>
       <hr>
@@ -445,7 +447,7 @@ html.no-fx .shiny { color: var(--ink); background: none; }
           </div>
           <h3>Recent</h3>
           <div class="chips" id="recent"></div>
-          <p class="hint" style="margin-top:8px">Click a verse to pick it, Shift+click to pick a range. Double-click shows it right away. While scripture is on the screen, <kbd>↑</kbd> <kbd>↓</kbd> move one verse up or down the passage.</p>
+          <p class="hint" style="margin-top:8px">Click a verse to pick it, Shift+click to pick a range. Double-click shows it right away. While scripture is on the screen, <kbd>↑</kbd> <kbd>↓</kbd> pick the verse before or after, and <kbd>Space</kbd> shows it.</p>
         </div>
         <div>
           <div class="row">
@@ -565,7 +567,7 @@ html.no-fx .shiny { color: var(--ink); background: none; }
         <div class="lbl"><span>Up next</span><span id="next-name"></span></div>
         <div class="screen next" id="mon-next"></div>
         <div class="keys">
-          <span><kbd>→</kbd> <kbd>Space</kbd> next</span><span><kbd>←</kbd> back</span><span><kbd>↑</kbd><kbd>↓</kbd> verse</span>
+          <span><kbd>Space</kbd> show next</span><span><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> pick next</span><span><kbd>F2</kbd> projector</span>
           <span><kbd>B</kbd> black</span><span><kbd>L</kbd> logo</span><span><kbd>C</kbd> hide words</span>
         </div>
               </div>
@@ -611,9 +613,10 @@ html.no-fx .shiny { color: var(--ink); background: none; }
   <form method="dialog">
     <h2>Keyboard shortcuts</h2>
     <table class="keys-t">
-      <tr><td><kbd>→</kbd> <kbd>Space</kbd> <kbd>Page Down</kbd></td><td>Next slide (a presentation clicker works too)</td></tr>
-      <tr><td><kbd>←</kbd> <kbd>Page Up</kbd></td><td>Previous slide</td></tr>
-      <tr><td><kbd>↓</kbd> <kbd>↑</kbd></td><td>Next verse / verse before, while scripture is on the screen</td></tr>
+      <tr><td><kbd>Space</kbd> <kbd>Enter</kbd> <kbd>Page Down</kbd></td><td>Put the "Up next" slide on the projector (a presentation clicker works too)</td></tr>
+      <tr><td><kbd>→</kbd> <kbd>↓</kbd> / <kbd>←</kbd> <kbd>↑</kbd></td><td>Pick which slide or verse is up next, on your screen only. The projector doesn't change until you press Space.</td></tr>
+      <tr><td><kbd>Page Up</kbd></td><td>Put the previous slide back on the projector</td></tr>
+      <tr><td><kbd>F2</kbd></td><td>Send the projector window to the other monitor, full screen</td></tr>
       <tr><td><kbd>B</kbd></td><td>Black screen (press again to bring the slide back)</td></tr>
       <tr><td><kbd>L</kbd></td><td>Logo screen</td></tr>
       <tr><td><kbd>C</kbd></td><td>Hide the words but keep the background</td></tr>
@@ -967,6 +970,8 @@ function sizeScreen(host) { host.style.aspectRatio = look.shape.replace(":", " /
 /* ---------- live state ---------- */
 // live = {i, s} for a slide in the service order, or {direct: slide} for something shown straight from the library.
 let live = null, mode = "", sel = 0, tab = "slides";
+// cue = what the arrow keys have picked to show next ({i, s} or {direct: slide}); null means "the slide after Live".
+let cue = null;
 function liveSlide() {
   if (!live) return null;
   if (live.direct) return live.direct;
@@ -988,7 +993,7 @@ function prevPos() {
 }
 function goLive(pos, keepMode, fromLoop) {
   if (!fromLoop && loopTimer) toggleLoop();
-  live = pos; if (!keepMode && mode !== "black") mode = mode === "clear" ? "clear" : "";
+  live = pos; cue = null; if (!keepMode && mode !== "black") mode = mode === "clear" ? "clear" : "";
   if (mode === "logo") mode = "";
   if (pos && !pos.direct) { sel = pos.i; }
   updateLive(true);
@@ -1001,6 +1006,52 @@ function goNext() {
 function goPrev() {
   if (live && live.direct && live.direct.kind === "scripture") return verseStep(-1);
   const p = prevPos(); if (p) goLive(p);
+}
+// One step forward or back from any position, for the arrow keys.
+function stepFrom(pos, d) {
+  if (!pos) return null;
+  if (pos.direct) { const sl = pos.direct; if (sl.kind !== "scripture") return null; const v = d > 0 ? nextVerse(sl) : prevVerse(sl); return v ? { direct: v } : null; }
+  const it = svc.items[pos.i]; if (!it) return null;
+  if (d > 0) {
+    if (pos.s + 1 < itemSlides(it, pos.i).length) return { i: pos.i, s: pos.s + 1 };
+    return pos.i + 1 < svc.items.length ? { i: pos.i + 1, s: 0 } : null;
+  }
+  if (pos.s > 0) return { i: pos.i, s: pos.s - 1 };
+  return pos.i > 0 ? { i: pos.i - 1, s: itemSlides(svc.items[pos.i - 1], pos.i - 1).length - 1 } : null;
+}
+function upNextPos() {
+  if (cue) return cue;
+  if (!live) return svc.items.length ? { i: Math.min(sel, svc.items.length - 1), s: 0 } : null;
+  if (live.direct) { const sl = live.direct; const v = sl.kind === "scripture" ? nextVerse(sl) : null; return v ? { direct: v } : null; }
+  return nextPos();
+}
+function slideAt(pos) { return !pos ? null : pos.direct ? pos.direct : (svc.items[pos.i] ? itemSlides(svc.items[pos.i], pos.i)[pos.s] : null); }
+// Arrow keys: move what the operator sees next, without changing the projector.
+function cueStep(d) {
+  const from = cue || (live ? live : null);
+  const n = from ? stepFrom(from, d) : upNextPos();
+  if (!n) return;
+  cue = n;
+  if (!n.direct && n.i !== sel) { sel = n.i; if (tab === "slides") renderSlides(); }
+  if (n.direct && n.direct.kind === "scripture" && tab === "bible") {
+    const p = n.direct.pos;
+    if (bibleView.b !== p.b || bibleView.c !== p.c) { bibleView.b = p.b; bibleView.c = p.c; renderChapter(); }
+    scrollToVerse(p.v);
+  }
+  updateLive(false);
+}
+// Space, Enter, the Next button and a clicker: put what's up next on the projector.
+function takeNext() {
+  const n = upNextPos(); if (!n) return;
+  if (n.direct && n.direct.kind === "scripture") return showVerseDirect(n.direct.tr, n.direct.pos, true, n.direct.part);
+  goLive(n);
+}
+function prevVerse(sl) {
+  if (sl.parts > 1 && sl.part > 0) return directVerse(sl.tr, sl.pos, sl.part - 1);
+  const B = bibles[sl.tr] || bibles.KJV;
+  let n = stepVerse(sl.pos.b, sl.pos.c, sl.pos.v, -1);
+  while (n && !B[n.b][n.c - 1][n.v - 1]) n = stepVerse(n.b, n.c, n.v, -1);
+  return n && directVerse(sl.tr, { b: n.b, c: n.c, v: n.v, c2: n.c, v2: n.v }, -1);
 }
 function verseStep(d) {
   const sl = liveSlide();
@@ -1049,7 +1100,9 @@ const SCREEN_DOC = '<!doctype html><html><head><meta charset="utf-8"><title>Sund
   'document.addEventListener("dblclick",function(){if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(function(){});});' +
   'setTimeout(function(){document.getElementById("hint").style.display="none";},15000);' +
   'document.addEventListener("fullscreenchange",function(){document.getElementById("hint").style.display=document.fullscreenElement?"none":"";});' +
-  'document.addEventListener("keydown",function(e){if(window.opener)window.opener.postMessage({sundayLiveKey:e.key},"*");if([" ","ArrowUp","ArrowDown","PageUp","PageDown"].indexOf(e.key)>=0)e.preventDefault();});' +
+  'function full(){if(!document.fullscreenElement)document.documentElement.requestFullscreen().catch(function(){});}' +
+  'window.addEventListener("message",function(e){if(e.data&&e.data.sundayLiveFull)full();});' +
+  'document.addEventListener("keydown",function(e){if(e.key==="F2"){e.preventDefault();return full();}if(window.opener)window.opener.postMessage({sundayLiveKey:e.key},"*");if([" ","ArrowUp","ArrowDown","PageUp","PageDown","Enter"].indexOf(e.key)>=0)e.preventDefault();});' +
   'window.addEventListener("resize",function(){if(window.opener)window.opener.postMessage({sundayLiveResize:1},"*");});' +
   '<\/script></body></html>';
 const STAGE_DOC = '<!doctype html><html><head><meta charset="utf-8"><title>Sunday Live – Stage view</title><style>' +
@@ -1079,6 +1132,20 @@ async function openScreen() {
   screenWin.focus();
   try { sessionStorage.setItem("sundayLive.screen", "1"); } catch (e) {}
   updateLive(false);
+}
+// F2: put the projector window on the other monitor and fill it.
+async function otherScreen() {
+  try { if ("getScreenDetails" in window) { const sd = await window.getScreenDetails(); return sd.screens.find(s => s !== sd.currentScreen) || null; } } catch (e) {}
+  return null;
+}
+async function projectorToMonitor() {
+  if (!screenOpen()) { await openScreen(); toast("Projector opened. If it doesn't fill the screen, press F2 again."); }
+  if (!screenOpen()) return;
+  const sc = await otherScreen();
+  try { if (sc) { screenWin.moveTo(sc.availLeft, sc.availTop); screenWin.resizeTo(sc.availWidth, sc.availHeight); } } catch (e) {}
+  // Lets the projector window go full screen from this key press (Chrome and Edge).
+  try { screenWin.postMessage({ sundayLiveFull: 1 }, { targetOrigin: "*", delegate: "fullscreen" }); } catch (e) { try { screenWin.postMessage({ sundayLiveFull: 1 }, "*"); } catch (e2) {} }
+  if (!sc && !("getScreenDetails" in window)) toast("Drag the projector window onto the projector, then double-click it.");
 }
 function openStage() {
   stageWin = window.open("", "sundayLiveStage", "popup,width=900,height=600");
@@ -1111,10 +1178,10 @@ function updateLive(fade) {
     const host = screenWin.document.getElementById("host");
     if (host) paint(host, sl, mode, { fade: fade && look.fade });
   }
-  const n = nextPos(), nsl = n ? itemSlides(svc.items[n.i], n.i)[n.s] : sl && live.direct && sl.kind === "scripture" ? nextVerse(sl) : null;
+  const un = upNextPos(), n = un && !un.direct ? un : null, nsl = slideAt(un);
   paint($("mon-next"), nsl, "", {});
   $("live-name").textContent = mode === "black" ? "Black screen" : mode === "logo" ? "Logo" : live ? (live.direct ? (live.direct.label || "") + " (not in service order)" : itemTitle(svc.items[live.i]) + " · " + (live.s + 1)) : "Nothing yet";
-  $("next-name").textContent = n ? itemTitle(svc.items[n.i]) + " · " + (n.s + 1) : nsl ? nsl.label : "";
+  $("next-name").textContent = (cue ? "Cued: " : "") + (n ? itemTitle(svc.items[n.i]) + " · " + (n.s + 1) : nsl ? nsl.label : "");
   for (const m of ["black", "logo", "clear"]) { $("m-" + m).setAttribute("aria-pressed", mode === m); $("rb-" + m).setAttribute("aria-pressed", mode === m); }
   const isVerse = sl && sl.kind === "scripture";
   $("live-verse").hidden = !isVerse;
@@ -1210,11 +1277,13 @@ function markLiveThumbs() {
   [...box.children].forEach((b, s) => {
     const on = live && !live.direct && live.i === +box.dataset.item && live.s === s;
     b.classList.toggle("live", !!on);
+    b.classList.toggle("cue", !!(cue && !cue.direct && cue.i === +box.dataset.item && cue.s === s));
     const cap = b.querySelector(".cap"); if (!cap) return;
     const tag = cap.children[1];
     if (on && !tag) cap.append(el("span", { text: "LIVE" })); else if (!on && tag) tag.remove();
   });
-  if (tab === "slides" && live && !live.direct && live.i === +box.dataset.item) { const b = box.children[live.s]; if (b) b.scrollIntoView({ block: "nearest" }); }
+  const focus = cue && !cue.direct ? cue : live && !live.direct ? live : null;
+  if (tab === "slides" && focus && focus.i === +box.dataset.item) { const b = box.children[focus.s]; if (b) b.scrollIntoView({ block: "nearest" }); }
 }
 
 /* ---------- tabs ---------- */
@@ -1626,21 +1695,21 @@ function applyShape() { document.querySelectorAll(".screen").forEach(sizeScreen)
 /* ---------- keyboard and controls ---------- */
 function onKey(e) {
   const t = e.target, typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
-  if (e.key === "PageDown" || e.key === "PageUp") { if ($("dlg").open || (t && t.tagName === "TEXTAREA")) return; e.preventDefault(); return e.key === "PageDown" ? goNext() : goPrev(); }
+  if (e.key === "F2") { e.preventDefault(); return projectorToMonitor(); }
+  if (e.key === "PageDown" || e.key === "PageUp") { if ($("dlg").open || (t && t.tagName === "TEXTAREA")) return; e.preventDefault(); return e.key === "PageDown" ? takeNext() : goPrev(); }
   if (typing || e.ctrlKey || e.metaKey || e.altKey || document.querySelector("dialog[open]")) return;
   if (t && t.id === "verses" && ["ArrowUp", "ArrowDown", "Enter"].includes(e.key)) return;
   const k = e.key;
-  if (k === "ArrowRight" || k === "PageDown" || k === " ") { e.preventDefault(); goNext(); }
-  else if (k === "ArrowLeft" || k === "PageUp") { e.preventDefault(); goPrev(); }
-  else if (k === "ArrowDown") { e.preventDefault(); verseStep(1); }
-  else if (k === "ArrowUp") { e.preventDefault(); verseStep(-1); }
+  if (k === " " || k === "Enter") { if (k === "Enter" && t && t.tagName === "BUTTON") return; e.preventDefault(); takeNext(); }
+  else if (k === "ArrowRight" || k === "ArrowDown") { e.preventDefault(); cueStep(1); }
+  else if (k === "ArrowLeft" || k === "ArrowUp") { e.preventDefault(); cueStep(-1); }
   else if (k === "b" || k === "B" || k === ".") setMode("black");
   else if (k === "l" || k === "L") setMode("logo");
   else if (k === "c" || k === "C") setMode("clear");
-  else if (k === "Escape") { mode = ""; updateLive(true); }
+  else if (k === "Escape") { if (cue && !mode) { cue = null; updateLive(false); } else { mode = ""; updateLive(true); } }
 }
 document.addEventListener("keydown", onKey);
-$("go-next").addEventListener("click", goNext);
+$("go-next").addEventListener("click", takeNext);
 $("go-prev").addEventListener("click", goPrev);
 $("v-down").addEventListener("click", () => verseStep(1));
 $("v-up").addEventListener("click", () => verseStep(-1));
@@ -1722,7 +1791,7 @@ const CMDS = {
   song: () => showTab("songs"), newsong: () => openEdit({}), hymn: () => openEdit({ hymn: true }), bible: () => showTab("bible"), slide: () => showTab("make"),
   welcome: () => addItem({ type: "welcome", style: "welcome" }), photo: () => addItem({ type: "welcome", style: "photo" }), blank: () => addItem({ type: "welcome", style: "black" }),
   countdown: () => { showTab("make"); $("cd-time").focus(); },
-  next: goNext, prev: goPrev, vdown: () => verseStep(1), vup: () => verseStep(-1),
+  next: takeNext, prev: goPrev, monitor: projectorToMonitor, vdown: () => verseStep(1), vup: () => verseStep(-1),
   black: () => setMode("black"), logo: () => setMode("logo"), clear: () => setMode("clear"),
   screen: () => $("btn-screen").click(), stage: () => $("btn-stage").click(),
   theme: toggleTheme, look: () => showTab("look"),
