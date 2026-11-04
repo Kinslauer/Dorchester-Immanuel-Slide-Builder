@@ -107,8 +107,8 @@ label.check input { width: 26px; height: 26px; accent-color: var(--accent); flex
 .makebar .in > div { min-width: 0; }
 .makebar button.primary { font-size: 1.25rem; padding: 12px 26px; min-height: 62px; }
 #status { margin: 0; font-weight: 700; }
-#status.ok { color: var(--accent); }
-#status.bad { color: var(--warn); }
+#status.ok, #open-status.ok { color: var(--accent); }
+#status.bad, #open-status.bad { color: var(--warn); }
 /* dialog */
 dialog { border: 0; border-radius: 14px; padding: 0; width: min(720px, calc(100vw - 32px)); background: var(--card); color: var(--ink); }
 dialog::backdrop { background: rgba(10, 14, 20, .55); }
@@ -174,6 +174,11 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
           <button type="button" id="btn-new">+ Type in a new song</button>
           <button type="button" id="btn-hymn">+ Hymn from the book</button>
         </div>
+        <div class="row">
+          <button type="button" id="btn-openpptx">Open a PowerPoint to change it</button>
+          <input type="file" id="pptx-file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
+        </div>
+        <p class="hint" id="open-status" role="status"></p>
       </div>
       <div class="panel">
         <h3>All songs</h3>
@@ -789,7 +794,7 @@ $("btn-make").addEventListener("click", async () => {
     pptx.layout = "LAYOUT_4x3";
     pptx.title = "Sunday " + week.date;
     for (const d of deckSlides()) { if (d.kind === "welcome") await addWelcome(pptx, d); else await addTextSlide(pptx, d); }
-    const blob = await pptx.write({ outputType: "blob" });
+    const blob = await addPlan(await pptx.write({ outputType: "blob" }));
     const [y, m, d] = week.date.split("-");
     const name = "Sunday " + Number(m) + "-" + Number(d) + "-" + y + ".pptx";
     const ok = await offerFile(name, blob);
@@ -800,6 +805,150 @@ $("btn-make").addEventListener("click", async () => {
     console.error(err);
   } finally { btn.disabled = false; }
 });
+
+/* ---------- opening a PowerPoint again ---------- */
+// Every PowerPoint made here carries this week's plan (songs, words, look, pictures) as a custom XML part,
+// so it can be opened and changed on any computer. Decks made before that are rebuilt from their slides.
+const PLAN_NS = "urn:dorchester-immanuel:sunday-slides";
+function xmlEsc(t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function planData() {
+  const used = new Set();
+  const note = id => { if (id && id.startsWith("p:")) used.add(id.slice(2)); };
+  week.songs.forEach(e => { note(e.bg); for (const k in e.bgs || {}) note(e.bgs[k]); });
+  for (const k in week.annBgs || {}) note(week.annBgs[k]);
+  for (const k in week.wBgs || {}) note(week.wBgs[k]);
+  const songs = {};
+  week.songs.forEach(e => { const so = songById(e.id); if (so) songs[e.id] = { t: so.t, k: so.k, s: so.s }; });
+  return { app: "sunday-slides", version: 1, week, songs, pictures: pictures.filter(p => used.has(p.id)) };
+}
+async function addPlan(blob) {
+  try {
+    const zip = await JSZip.loadAsync(blob);
+    zip.file("customXml/item1.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<sundaySlides xmlns="' + PLAN_NS + '">' + xmlEsc(JSON.stringify(planData())) + "</sundaySlides>", { createFolders: false });
+    zip.file("customXml/itemProps1.xml", '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<ds:datastoreItem ds:itemID="{6E1D2C4B-5A0F-4C1E-9B7D-3F5A2E8C1D90}" xmlns:ds="http://schemas.openxmlformats.org/officeDocument/2006/customXml"><ds:schemaRefs><ds:schemaRef ds:uri="' + PLAN_NS + '"/></ds:schemaRefs></ds:datastoreItem>', { createFolders: false });
+    zip.file("customXml/_rels/item1.xml.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps" Target="itemProps1.xml"/></Relationships>', { createFolders: false });
+    const relsPath = "ppt/_rels/presentation.xml.rels";
+    let rels = await zip.file(relsPath).async("string");
+    rels = rels.replace("</Relationships>", '<Relationship Id="rIdSundayPlan" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="../customXml/item1.xml"/></Relationships>');
+    zip.file(relsPath, rels);
+    let ct = await zip.file("[Content_Types].xml").async("string");
+    if (!/Extension="xml"/i.test(ct)) ct = ct.replace("<Default ", '<Default Extension="xml" ContentType="application/xml"/><Default ');
+    ct = ct.replace("</Types>", '<Override PartName="/customXml/itemProps1.xml" ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"/></Types>');
+    zip.file("[Content_Types].xml", ct);
+    return await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation", compression: "DEFLATE" });
+  } catch (e) { console.warn("Could not add the plan to the PowerPoint", e); return blob; }
+}
+const norm = t => t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+function xmlText(x) { return x.replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&"); }
+// Read a slide: its words (one line per paragraph), background color, font and size.
+function readSlide(xml) {
+  const lines = [];
+  (xml.match(/<a:p>[\s\S]*?<\/a:p>|<a:p [\s\S]*?<\/a:p>/g) || []).forEach(par => {
+    let line = "";
+    (par.match(/<a:t>[\s\S]*?<\/a:t>|<a:br\/>|<a:br [^>]*\/>/g) || []).forEach(bit => { line += bit.startsWith("<a:br") ? "\n" : xmlText(bit); });
+    lines.push(line);
+  });
+  const bg = (xml.match(/<p:bg>[\s\S]*?<a:srgbClr val="([0-9A-Fa-f]{6})"/) || [])[1];
+  const pic = /<p:bg>[\s\S]*?<a:blip /.test(xml);
+  const font = (xml.match(/<a:latin typeface="([^"]+)"/) || [])[1];
+  const sz = Math.max(0, ...(xml.match(/ sz="(\d+)"/g) || []).map(m => +m.match(/\d+/)[0] / 100));
+  return { text: lines.join("\n").replace(/\n{3,}/g, "\n\n").trim(), bg: bg && bg.toUpperCase(), pic, font, bold: / b="1"/.test(xml), sz, images: (xml.match(/<p:pic>/g) || []).length };
+}
+// Rebuild a week from the slides of a PowerPoint that has no plan inside (made before plans were added).
+function weekFromSlides(slides, title) {
+  const w = { songs: [], bg: "alt", size: week.size, font: week.font, bold: false, welcomeStart: false, welcomeEnd: false, welcome: "black", anns: [], lines: 0 };
+  const m = (title || "").match(/(\d{4}-\d{2}-\d{2})/); if (m) w.date = m[1];
+  const isWelcome = sl => /dorchester immanuel/i.test(sl.text) && (/^welcome/i.test(sl.text) || sl.images > 0) && sl.text.split("\n").length <= 4;
+  if (slides.length && isWelcome(slides[0])) { w.welcomeStart = true; w.welcome = /WELCOME/.test(slides[0].text) ? "black" : "photo"; slides = slides.slice(1); }
+  if (slides.length && isWelcome(slides[slides.length - 1])) { w.welcomeEnd = true; if (!w.welcomeStart) w.welcome = /WELCOME/.test(slides[slides.length - 1].text) ? "black" : "photo"; slides = slides.slice(0, -1); }
+  const lib = library().map(so => ({ so, all: " " + norm(so.s.join(" ")) + " ", parts: so.s.map(norm) }));
+  const groups = [];
+  slides.filter(sl => sl.text).forEach(sl => {
+    const n = norm(sl.text), cands = n ? lib.filter(x => x.all.includes(" " + n + " ")) : [];
+    const g = groups[groups.length - 1];
+    const keep = g && g.cands.length && cands.some(c => g.cands.includes(c)) && !(cands.some(c => c.parts[0] === n) && g.slides.length && g.cands.filter(c => cands.includes(c)).every(c => c.parts[0] === n));
+    if (keep) { g.cands = g.cands.filter(c => cands.includes(c)); g.slides.push(sl); }
+    else if (g && !g.cands.length && !cands.length && g.slides[0].bg === sl.bg && groups.some(x => x.cands.length)) g.slides.push(sl);
+    else groups.push({ cands, slides: [sl] });
+  });
+  let seenSong = false, custom2 = [];
+  groups.forEach(g => {
+    if (!g.cands.length && !seenSong) { g.slides.forEach(sl => w.anns.push(sl.text)); return; }
+    seenSong = true;
+    let id;
+    if (g.cands.length) {
+      const best = g.cands.find(c => c.so.s.length === g.slides.length) || g.cands[0];
+      id = best.so.id;
+      if (g.slides.some(sl => !best.parts.includes(norm(sl.text)))) w.lines = Math.max(w.lines, ...g.slides.map(sl => sl.text.split("\n").length));
+    } else {
+      id = "c" + Date.now() + groups.indexOf(g);
+      const words = g.slides.map(sl => sl.text);
+      custom2.push({ id, d: w.date, t: words[0].split("\n")[0].replace(/[.,;:!]+$/, ""), k: "song", s: words });
+    }
+    w.songs.push({ id, _bg: g.slides[0].bg, _pic: g.slides.some(sl => sl.pic) });
+  });
+  if (w.lines && ![2, 3, 4].includes(w.lines)) w.lines = w.lines < 2 ? 2 : 4;
+  // Song colors: black and white taking turns, one color for all, or each song its own.
+  const cols = w.songs.map(e => e._bg || "000000");
+  const alt = cols.every((c, i) => c === (i % 2 ? "FFFFFF" : "000000"));
+  if (!alt && cols.length && cols.every(c => c === cols[0]) && BGS.some(b => b.id === cols[0])) w.bg = cols[0];
+  else if (!alt) w.songs.forEach((e, i) => { if (cols[i] !== (i % 2 ? "FFFFFF" : "000000")) e.bg = "c:" + cols[i]; });
+  const lost = w.songs.some(e => e._pic);
+  w.songs.forEach(e => { delete e._bg; delete e._pic; });
+  const first = slides.find(sl => sl.text && sl.font);
+  if (first) {
+    if (FONTS.includes(first.font)) w.font = first.font;
+    w.bold = first.bold;
+    const big = Math.max(...slides.map(sl => sl.sz)); const sz = SIZES.slice().reverse().find(x => x.pt <= big + 1); if (sz) w.size = sz.id;
+  }
+  return { week: w, added: custom2, lost };
+}
+async function openPptx(f) {
+  const st = $("open-status");
+  st.className = "hint"; st.textContent = "Opening “" + f.name + "”…";
+  try {
+    const zip = await JSZip.loadAsync(f);
+    let plan = null;
+    for (const name of Object.keys(zip.files).filter(n => /^customXml\/item\d+\.xml$/.test(n))) {
+      const x = await zip.file(name).async("string");
+      if (x.includes(PLAN_NS)) { plan = JSON.parse(xmlText(x.replace(/^[\s\S]*?<sundaySlides[^>]*>/, "").replace(/<\/sundaySlides>[\s\S]*$/, ""))); break; }
+    }
+    let note = "";
+    if (plan && plan.week) {
+      // Songs that this browser doesn't have (or has different words for) come along inside the file.
+      for (const id in plan.songs || {}) {
+        const so = plan.songs[id], here = songById(id);
+        if (here && here.t === so.t && JSON.stringify(here.s) === JSON.stringify(so.s)) continue;
+        if (id[0] === "b" && here) { custom.edits[id] = Object.assign({}, custom.edits[id], so); continue; }
+        if (!here) { custom.removed = custom.removed.filter(x => x !== id); if (id[0] !== "b") custom.added.push(Object.assign({ id, d: plan.week.date }, so)); else custom.edits[id] = so; continue; }
+        const nid = "c" + Date.now() + Math.random().toString(36).slice(2, 6);
+        custom.added.push(Object.assign({ id: nid, d: plan.week.date }, so));
+        plan.week.songs.forEach(e => { if (e.id === id) e.id = nid; });
+      }
+      (plan.pictures || []).forEach(p => { if (!pictures.some(x => x.id === p.id)) pictures.push(p); });
+      save(KEY_PICS, pictures);
+      week = plan.week;
+    } else {
+      const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => +a.match(/\d+/)[0] - +b.match(/\d+/)[0]);
+      if (!names.length) throw new Error("no slides");
+      const slides = []; for (const n of names) slides.push(readSlide(await zip.file(n).async("string")));
+      const core = zip.file("docProps/core.xml") ? await zip.file("docProps/core.xml").async("string") : "";
+      const got = weekFromSlides(slides, xmlText((core.match(/<dc:title>[\s\S]*?<\/dc:title>/) || [""])[0]));
+      got.added.forEach(a => custom.added.push(a));
+      week = Object.assign({}, week, got.week, { annBgs: {}, wBgs: {} });
+      note = " Please look the songs over: this file was made before PowerPoints remembered their plan, so it was rebuilt from the slides." + (got.lost ? " Picture backgrounds have to be picked again." : "");
+    }
+    if (!week.date) week.date = nextSunday();
+    week.anns = week.anns || []; week.songs = week.songs || [];
+    deckSel = null; changed();
+    st.className = "hint ok"; st.textContent = "Opened “" + f.name + "”: " + week.songs.length + (week.songs.length === 1 ? " song" : " songs") + ". Change anything, then make the PowerPoint again." + note;
+  } catch (e) {
+    console.warn(e);
+    st.className = "hint bad"; st.textContent = "That file couldn't be opened. Pick a PowerPoint (.pptx) made with this page.";
+  }
+}
+$("btn-openpptx").addEventListener("click", () => $("pptx-file").click());
+$("pptx-file").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) openPptx(f); });
 
 /* ---------- backup ---------- */
 $("btn-backup").addEventListener("click", () => offerFile("Sunday Slides backup " + new Date().toISOString().slice(0, 10) + ".json", new Blob([JSON.stringify({ custom, week }, null, 1)], { type: "application/json" })));

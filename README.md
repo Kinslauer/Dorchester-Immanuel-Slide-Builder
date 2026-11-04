@@ -18,6 +18,8 @@ There is nothing to install: open the page, pick the songs, and press **Make my 
 
 **Make my PowerPoint** downloads one 4:3 deck named like `Sunday 11-1-2026.pptx`. The words shrink automatically so every slide fits.
 
+**Open a PowerPoint to change it** (in step 1) opens a PowerPoint made with this page, on any computer, so it can be changed and made again. Each PowerPoint carries its plan inside (songs, words, look and own pictures). Older ones are rebuilt from their slides.
+
 Changes and new songs are saved in the browser that made them. **Save a backup of my songs** downloads a file that **Restore from a backup** can load on another computer or browser.
 
 ## Sunday Live (running the service)
@@ -26,7 +28,7 @@ Changes and new songs are saved in the browser that made them. **Save a backup o
 
 1. **Build the service order** on the left. Add songs from the song list, scripture from the Bible tab, your own slides, a welcome slide or a countdown to the start of service. Drag items or use the arrows to reorder them. **Bring in this week's songs from Sunday Slides** copies what was picked in the builder.
 2. **Open projector screen** opens a second window. Drag it onto the projector and double-click it to fill the screen. In Chrome or Edge, if the computer allows it, the window opens on the projector by itself. **Stage view** opens a window for the musicians or the pastor. It shows the words on screen now, the next slide, and a clock.
-3. **Run it.** Click any slide to show it, or use the keys: <kbd>→</kbd>/<kbd>Space</kbd>/<kbd>Page Down</kbd> for next, <kbd>←</kbd>/<kbd>Page Up</kbd> for back (so a presentation clicker works), <kbd>B</kbd> for a black screen, <kbd>L</kbd> for the logo, and <kbd>C</kbd> to hide the words but keep the background.
+3. **Run it.** Click any slide to show it, or use the keys. <kbd>Space</kbd> (or <kbd>Enter</kbd> or <kbd>Page Down</kbd>, so a presentation clicker works) puts the "Up next" slide on the projector. The arrow keys only change what's up next on the operator screen, so you can look ahead or jump to another slide or verse without the room seeing it; press <kbd>Space</kbd> to show it. <kbd>Page Up</kbd> goes back one slide on the projector. <kbd>F2</kbd> sends the projector window to the other monitor and fills it. <kbd>B</kbd> is a black screen, <kbd>L</kbd> the logo, and <kbd>C</kbd> hides the words but keeps the background.
 
 **Bible:** start typing a book and it offers matches as you type (`1 th` → 1 Thessalonians, `thes` → both letters). Press <kbd>Tab</kbd> or <kbd>Enter</kbd> to take one, then pick a chapter and a verse from the buttons that appear. You can also type a whole reference such as `jn 3:16`, `Ps 23`, `1 cor 13:4-7` or `Rom 8:38-9:2`, then press <kbd>Enter</kbd> to show it or <kbd>Shift</kbd>+<kbd>Enter</kbd> to add it to the service. You can also type a few words to find a verse. While scripture is on screen, <kbd>↑</kbd>/<kbd>↓</kbd> move one verse back or forward through the Bible. The translation can be switched while a verse is showing. The page includes the **KJV** and the **Berean Standard Bible**. Both are public domain. The NKJV, NIV and ESV are copyrighted and can't be included.
 
