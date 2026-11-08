@@ -82,6 +82,15 @@ ol.chosen .acts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px;
 .lib button.song .meta { display: block; font-size: .85rem; color: var(--muted); }
 .lib button.song[disabled] { opacity: .5; cursor: default; }
 .lib button.song[disabled] .add { color: var(--muted); }
+.lib .song-row { display: grid; grid-template-columns: 1fr auto; border-bottom: 1px solid var(--line); }
+.lib .song-row:last-child { border-bottom: 0; }
+.lib .song-row button.song { border-bottom: 0; }
+.lib .song .words { display: block; font-size: .85rem; color: var(--muted); font-style: italic; margin-top: 2px; white-space: normal; }
+.lib .song .words mark { background: var(--accent-soft); color: inherit; font-style: normal; border-radius: 3px; padding: 0 2px; }
+.lib button.peek { border: 0; border-radius: 0; border-left: 1px solid var(--line); font-size: .85rem; padding: 0 12px; color: var(--muted); white-space: nowrap; }
+.lib button.peek[aria-expanded=true] { color: var(--accent); background: var(--accent-soft); }
+.lib .all-words { grid-column: 1 / -1; padding: 4px 16px 14px; display: grid; gap: 8px; font-size: .92rem; }
+.lib .all-words div { white-space: pre-line; border-left: 3px solid var(--line); padding-left: 10px; }
 .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 /* look */
 .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -176,8 +185,10 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
         </div>
         <div class="row">
           <button type="button" id="btn-openpptx">Open a PowerPoint to change it</button>
+          <button type="button" id="btn-drive" hidden>Open from Google Drive</button>
           <input type="file" id="pptx-file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
         </div>
+        <p class="hint" id="open-hint">Google Slides works too: in Slides pick <b>File → Download → Microsoft PowerPoint</b>, then open that file here.</p>
         <p class="hint" id="open-status" role="status"></p>
       </div>
       <div class="panel">
@@ -280,8 +291,10 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
     <input type="text" id="dlg-name">
     <div id="dlg-words-wrap" class="panel">
       <label for="dlg-words" style="font-weight:700">Words</label>
-      <p class="hint" style="margin:0">Leave one empty line where you want a new slide to start.</p>
+      <p class="hint" id="hymn-find" style="margin:0" hidden>Optional: to put the verses on screen, <a id="hymn-link" href="https://hymnary.org/" target="_blank" rel="noopener">find this hymn on Hymnary.org</a>, copy the verses and paste them here. Leave it empty for just the title slide.</p>
+      <p class="hint" style="margin:0">Leave one empty line where you want a new slide to start. You can paste words copied from PowerPoint or Google Slides: copy one slide or several, and each becomes its own slide here.</p>
       <textarea id="dlg-words"></textarea>
+      <p class="hint" id="paste-note" style="margin:0" hidden></p>
     </div>
     <p id="dlg-confirm" class="hint" hidden></p>
     <div class="row">
@@ -501,6 +514,23 @@ function renderChosen() {
 }
 function move(i, d) { const j = i + d; if (j < 0 || j >= week.songs.length) return; [week.songs[i], week.songs[j]] = [week.songs[j], week.songs[i]]; changed(); }
 
+const libOpen = new Set();
+// A line of the words under each title: the line that matches the search, or else how the song starts.
+function wordsHint(s, q) {
+  if (s.k === "hymn") return null;
+  const lines = s.s.join("\n").split("\n").map(x => x.trim()).filter(Boolean);
+  const hit = q && !s.t.toLowerCase().includes(q) ? lines.find(l => l.toLowerCase().includes(q)) : null;
+  const span = el("span", { class: "words" });
+  if (hit) {
+    const i = hit.toLowerCase().indexOf(q);
+    span.append("“" + hit.slice(0, i), el("mark", { text: hit.slice(i, i + q.length) }), hit.slice(i + q.length) + "”");
+  } else {
+    const start = lines.slice(0, 2).join(" / ");
+    if (!start || start.toLowerCase() === s.t.toLowerCase()) { const more = lines.slice(1, 3).join(" / "); if (!more) return null; span.textContent = "“" + more + "”"; }
+    else span.textContent = "“" + start + (lines.length > 2 ? " …" : "") + "”";
+  }
+  return span;
+}
 function renderLib() {
   const q = $("find").value.toLowerCase().trim();
   const box = $("lib"); box.innerHTML = "";
@@ -511,10 +541,17 @@ function renderLib() {
   list.forEach(s => {
     const already = chosenIds.has(s.id);
     const meta = s.k === "hymn" ? "Hymn title" : s.s.length + (s.s.length === 1 ? " slide" : " slides") + (s.d ? " · last used " + new Date(s.d + "T12:00").toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "");
-    box.append(el("button", { type: "button", class: "song", role: "listitem", disabled: already ? "" : null, on: { click: () => { week.songs.push({ id: s.id }); changed(); } } },
-      el("span", {}, s.t, el("span", { class: "meta", text: meta })),
-      el("span", { class: "add", text: already ? "Added" : "+ Add" })));
-    if (!already) box.lastChild.removeAttribute("disabled");
+    const btn = el("button", { type: "button", class: "song", disabled: already ? "" : null, on: { click: () => { week.songs.push({ id: s.id }); changed(); } } },
+      el("span", {}, s.t, el("span", { class: "meta", text: meta }), wordsHint(s, q)),
+      el("span", { class: "add", text: already ? "Added" : "+ Add" }));
+    if (!already) btn.removeAttribute("disabled");
+    const row = el("div", { class: "song-row", role: "listitem" }, btn);
+    if (s.k !== "hymn") {
+      const open = libOpen.has(s.id);
+      row.append(el("button", { type: "button", class: "peek", "aria-expanded": String(open), "aria-label": "Show all the words of " + s.t, on: { click: () => { open ? libOpen.delete(s.id) : libOpen.add(s.id); renderLib(); } } }, open ? "Hide words ▴" : "Words ▾"));
+      if (open) row.append(el("div", { class: "all-words" }, ...s.s.filter(x => x.trim()).map(x => el("div", { text: x.trim() }))));
+    }
+    box.append(row);
   });
 }
 
@@ -659,19 +696,75 @@ function openEdit(opts) {
   $("dlg-title").textContent = opts.entry != null ? "Change the words" : hymn ? "Add a hymn from the book" : "Type in a new song";
   $("dlg-name").value = s ? s.t : "";
   $("dlg-name").placeholder = hymn ? "For example: Amazing Grace #92" : "For example: Amazing Grace";
-  $("dlg-words-wrap").hidden = !!hymn;
-  $("dlg-words").value = s && !hymn ? s.s.join("\n\n") : "";
+  $("dlg-words-wrap").hidden = false; $("hymn-find").hidden = !hymn; editing.hymnMode = !!hymn;
+  $("dlg-words").value = s && !hymn ? s.s.join("\n\n") : ""; $("paste-note").hidden = true;
   $("dlg-delete").hidden = opts.entry == null;
   $("dlg-confirm").hidden = true; $("dlg-delete").dataset.armed = "";
   $("dlg-delete").textContent = "Remove from my song list";
   dlg.showModal();
   (opts.entry != null && !hymn ? $("dlg-words") : $("dlg-name")).focus();
+  hymnLink();
 }
+// Search Hymnary.org for the hymn name (without a "#92" hymnal number).
+function hymnLink() { const q = $("dlg-name").value.replace(/#\s*\d+/g, "").trim(); $("hymn-link").href = q ? "https://hymnary.org/search?qu=" + encodeURIComponent(q) : "https://hymnary.org/"; }
+$("dlg-name").addEventListener("input", hymnLink);
 $("dlg-cancel").addEventListener("click", () => $("dlg").close());
+// Pasting from PowerPoint or Google Slides: keep each slide (or text box) as its own slide, one line per paragraph.
+function htmlToSlides(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll("script,style,title,meta").forEach(n => n.remove());
+  const BLOCK = /^(P|DIV|LI|H[1-6]|TR|BLOCKQUOTE)$/;
+  const out = []; let cur = [], line = "";
+  const endLine = () => { if (line.trim()) cur.push(line.trim()); line = ""; };
+  const endSlide = () => { endLine(); if (cur.length) out.push(cur.join("\n")); cur = []; };
+  (function walk(n) {
+    for (const c of n.childNodes) {
+      if (c.nodeType === 3) { line += c.nodeValue.replace(/[\s\u00a0]+/g, " "); continue; }
+      if (c.nodeType !== 1) continue;
+      if (c.tagName === "BR") { endLine(); continue; }
+      // A slide or a text box: anything that holds more than one paragraph of its own.
+      const box = c.tagName === "TABLE" || c.tagName === "svg" || /slide|shape|textbox/i.test((c.className && c.className.baseVal != null ? c.className.baseVal : c.className) + " " + (c.id || "")) || (c.tagName === "DIV" && [...c.children].filter(k => BLOCK.test(k.tagName)).length > 1 && c.parentNode === doc.body);
+      if (box) endSlide(); else if (BLOCK.test(c.tagName)) endLine();
+      walk(c);
+      if (box) endSlide(); else if (BLOCK.test(c.tagName)) endLine();
+    }
+  })(doc.body);
+  endSlide();
+  return out;
+}
+function cleanPlain(t) {
+  // PowerPoint and Slides use a vertical tab for a line break inside a paragraph.
+  return t.replace(/\r\n?/g, "\n").replace(/[\u000b\u2028]/g, "\n").replace(/\u2029/g, "\n\n").replace(/[ \t\u00a0]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+$("dlg-words").addEventListener("paste", e => {
+  const cd = e.clipboardData; if (!cd) return;
+  const note = $("paste-note"); note.hidden = true;
+  const plain = cd.getData("text/plain"), html = cd.getData("text/html");
+  let text = "";
+  const fromHtml = html ? htmlToSlides(html) : [];
+  if (fromHtml.length > 1) text = fromHtml.join("\n\n");
+  else if (plain.trim()) text = cleanPlain(plain);
+  else if (fromHtml.length) text = fromHtml.join("\n\n");
+  if (!text) {
+    e.preventDefault();
+    note.hidden = false;
+    note.textContent = "No words came with that copy. Click inside the words on the slide, press Ctrl+A, then Ctrl+C, and paste again." + (cd.types.length ? " (It held: " + [...cd.types].join(", ") + ")" : "");
+    return;
+  }
+  e.preventDefault();
+  const ta = e.target, a = ta.selectionStart, b = ta.selectionEnd, before = ta.value.slice(0, a), after = ta.value.slice(b);
+  const pre = before && !/\n\s*\n\s*$/.test(before) && fromHtml.length > 1 ? "\n\n" : "";
+  ta.value = before + pre + text + after;
+  ta.selectionStart = ta.selectionEnd = (before + pre + text).length;
+  const n = text.split(/\n\s*\n/).filter(x => x.trim()).length;
+  note.hidden = false; note.textContent = "Pasted " + n + (n === 1 ? " slide" : " slides") + ". Check the words, then tap Save.";
+});
 $("dlg-save").addEventListener("click", () => {
   const name = $("dlg-name").value.trim();
-  const hymn = $("dlg-words-wrap").hidden;
-  const words = $("dlg-words").value.replace(/\r/g, "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  let words = $("dlg-words").value.replace(/\r/g, "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  // Verses copied from a hymnal site start with their number ("1 Amazing grace…"): drop it.
+  if (words.length > 1 && words.every(w => /^\d{1,2}[.)]?\s/.test(w))) words = words.map(w => w.replace(/^\d{1,2}[.)]?\s+/, ""));
+  const hymn = editing.hymnMode && !words.length;
   if (!name) { $("dlg-name").focus(); $("dlg-name").placeholder = "Please type a name first"; return; }
   if (!hymn && !words.length) { $("dlg-words").focus(); return; }
   const data = hymn ? { t: name, k: "hymn", s: [name + "\n(Hymn)"] } : { t: name, k: "song", s: words };
@@ -854,11 +947,11 @@ function readSlide(xml) {
   const sz = Math.max(0, ...(xml.match(/ sz="(\d+)"/g) || []).map(m => +m.match(/\d+/)[0] / 100));
   return { text: lines.join("\n").replace(/\n{3,}/g, "\n\n").trim(), bg: bg && bg.toUpperCase(), pic, font, bold: / b="1"/.test(xml), sz, images: (xml.match(/<p:pic>/g) || []).length };
 }
+const isWelcome = sl => /dorchester immanuel/i.test(sl.text) && (/^welcome/i.test(sl.text) || sl.images > 0) && sl.text.split("\n").length <= 4;
 // Rebuild a week from the slides of a PowerPoint that has no plan inside (made before plans were added).
 function weekFromSlides(slides, title) {
   const w = { songs: [], bg: "alt", size: week.size, font: week.font, bold: false, welcomeStart: false, welcomeEnd: false, welcome: "black", anns: [], lines: 0 };
   const m = (title || "").match(/(\d{4}-\d{2}-\d{2})/); if (m) w.date = m[1];
-  const isWelcome = sl => /dorchester immanuel/i.test(sl.text) && (/^welcome/i.test(sl.text) || sl.images > 0) && sl.text.split("\n").length <= 4;
   if (slides.length && isWelcome(slides[0])) { w.welcomeStart = true; w.welcome = /WELCOME/.test(slides[0].text) ? "black" : "photo"; slides = slides.slice(1); }
   if (slides.length && isWelcome(slides[slides.length - 1])) { w.welcomeEnd = true; if (!w.welcomeStart) w.welcome = /WELCOME/.test(slides[slides.length - 1].text) ? "black" : "photo"; slides = slides.slice(0, -1); }
   const lib = library().map(so => ({ so, all: " " + norm(so.s.join(" ")) + " ", parts: so.s.map(norm) }));
@@ -903,11 +996,16 @@ function weekFromSlides(slides, title) {
   }
   return { week: w, added: custom2, lost };
 }
-async function openPptx(f) {
-  const st = $("open-status");
-  st.className = "hint"; st.textContent = "Opening “" + f.name + "”…";
+async function openPptx(f, fname) {
+  const st = $("open-status"), name0 = fname || f.name;
+  st.className = "hint"; st.textContent = "Opening “" + name0 + "”…";
   try {
     const zip = await JSZip.loadAsync(f);
+    const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => +a.match(/\d+/)[0] - +b.match(/\d+/)[0]);
+    if (!names.length) throw new Error("no slides");
+    const slides = []; for (const n of names) slides.push(readSlide(await zip.file(n).async("string")));
+    const fileTexts = slides.filter(sl => sl.text && !isWelcome(sl)).map(sl => sl.text), fileWords = fileTexts.map(norm).join("|");
+    const before = JSON.stringify({ week, custom });
     let plan = null;
     for (const name of Object.keys(zip.files).filter(n => /^customXml\/item\d+\.xml$/.test(n))) {
       const x = await zip.file(name).async("string");
@@ -928,26 +1026,87 @@ async function openPptx(f) {
       (plan.pictures || []).forEach(p => { if (!pictures.some(x => x.id === p.id)) pictures.push(p); });
       save(KEY_PICS, pictures);
       week = plan.week;
-    } else {
-      const names = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => +a.match(/\d+/)[0] - +b.match(/\d+/)[0]);
-      if (!names.length) throw new Error("no slides");
-      const slides = []; for (const n of names) slides.push(readSlide(await zip.file(n).async("string")));
+      // If someone changed the words in PowerPoint or Google Slides after it was made, the slides win.
+      const deck = deckSlides().filter(d => d.kind === "text");
+      if (deck.map(d => norm(d.text)).join("|") !== fileWords) {
+        if (deck.length === fileTexts.length) {
+          const bySong = {};
+          deck.forEach((d, k) => {
+            if (d.ann != null) week.anns[d.ann] = fileTexts[k];
+            else (bySong[d.song] = bySong[d.song] || []).push(k);
+          });
+          for (const i in bySong) {
+            const ks = bySong[i];
+            if (ks.every(k => norm(deck[k].text) === norm(fileTexts[k]))) continue;
+            const e = week.songs[i], so = songById(e.id); if (!so) continue;
+            const data = { t: so.t, k: "song", s: ks.map(k => fileTexts[k]) };
+            if (e.id[0] === "b") custom.edits[e.id] = Object.assign({}, custom.edits[e.id], data);
+            else { const a = custom.added.find(x => x.id === e.id); if (a) Object.assign(a, data); }
+          }
+          note = " Words changed in PowerPoint or Google Slides were kept.";
+        } else { const b = JSON.parse(before); week = b.week; custom = b.custom; plan = null; }
+      }
+    }
+    if (!plan || !plan.week) {
       const core = zip.file("docProps/core.xml") ? await zip.file("docProps/core.xml").async("string") : "";
       const got = weekFromSlides(slides, xmlText((core.match(/<dc:title>[\s\S]*?<\/dc:title>/) || [""])[0]));
       got.added.forEach(a => custom.added.push(a));
       week = Object.assign({}, week, got.week, { annBgs: {}, wBgs: {} });
-      note = " Please look the songs over: this file was made before PowerPoints remembered their plan, so it was rebuilt from the slides." + (got.lost ? " Picture backgrounds have to be picked again." : "");
+      note = " It was rebuilt from the words on the slides, so please look the songs over." + (got.lost ? " Picture backgrounds have to be picked again." : "");
     }
     if (!week.date) week.date = nextSunday();
     week.anns = week.anns || []; week.songs = week.songs || [];
     deckSel = null; changed();
-    st.className = "hint ok"; st.textContent = "Opened “" + f.name + "”: " + week.songs.length + (week.songs.length === 1 ? " song" : " songs") + ". Change anything, then make the PowerPoint again." + note;
+    st.className = "hint ok"; st.textContent = "Opened “" + name0 + "”: " + week.songs.length + (week.songs.length === 1 ? " song" : " songs") + ". Change anything, then make the PowerPoint again." + note;
   } catch (e) {
     console.warn(e);
     st.className = "hint bad"; st.textContent = "That file couldn't be opened. Pick a PowerPoint (.pptx) made with this page.";
   }
 }
 $("btn-openpptx").addEventListener("click", () => $("pptx-file").click());
+
+/* ---------- Google Drive ---------- */
+// Filled in once from Google Cloud (see README, "Open from Google Drive"). Empty = the button stays hidden.
+const GOOGLE = { clientId: "", apiKey: "", appId: "" };
+const PPTX_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation", SLIDES_MIME = "application/vnd.google-apps.presentation";
+let gToken = null;
+function loadScript(src) { return new Promise((ok, bad) => { if (document.querySelector('script[src="' + src + '"]')) return ok(); const sc = document.createElement("script"); sc.src = src; sc.onload = ok; sc.onerror = bad; document.head.append(sc); }); }
+async function driveToken() {
+  if (gToken && gToken.exp > Date.now()) return gToken.t;
+  await loadScript("https://accounts.google.com/gsi/client");
+  return new Promise((ok, bad) => {
+    const tc = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE.clientId, scope: "https://www.googleapis.com/auth/drive.file",
+      callback: r => { if (r.error) return bad(r); gToken = { t: r.access_token, exp: Date.now() + (r.expires_in - 60) * 1000 }; ok(r.access_token); },
+      error_callback: bad });
+    tc.requestAccessToken();
+  });
+}
+async function openFromDrive() {
+  const st = $("open-status");
+  try {
+    st.className = "hint"; st.textContent = "Connecting to Google Drive…";
+    const token = await driveToken();
+    await loadScript("https://apis.google.com/js/api.js");
+    await new Promise(ok => gapi.load("picker", ok));
+    const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setMimeTypes(SLIDES_MIME + "," + PPTX_MIME).setIncludeFolders(true).setMode(google.picker.DocsViewMode.LIST);
+    const doc = await new Promise(ok => {
+      new google.picker.PickerBuilder().addView(view).setOAuthToken(token).setDeveloperKey(GOOGLE.apiKey).setAppId(GOOGLE.appId).setTitle("Pick a Sunday slideshow")
+        .setCallback(d => { if (d.action === google.picker.Action.PICKED) ok(d.docs[0]); else if (d.action === google.picker.Action.CANCEL) ok(null); }).build().setVisible(true);
+    });
+    if (!doc) { st.textContent = ""; return; }
+    st.textContent = "Getting “" + doc.name + "” from Google Drive…";
+    const url = doc.mimeType === SLIDES_MIME
+      ? "https://www.googleapis.com/drive/v3/files/" + doc.id + "/export?mimeType=" + encodeURIComponent(PPTX_MIME)
+      : "https://www.googleapis.com/drive/v3/files/" + doc.id + "?alt=media&supportsAllDrives=true";
+    const res = await fetch(url, { headers: { Authorization: "Bearer " + token } });
+    if (!res.ok) throw new Error("Drive said " + res.status);
+    await openPptx(await res.blob(), doc.name);
+  } catch (e) {
+    console.warn(e);
+    st.className = "hint bad"; st.textContent = navigator.onLine === false ? "Google Drive needs the internet. Download the file instead and use “Open a PowerPoint”." : "Google Drive didn't open. Try again, or download the file and use “Open a PowerPoint”.";
+  }
+}
+if (GOOGLE.clientId && GOOGLE.apiKey) { $("btn-drive").hidden = false; $("btn-drive").addEventListener("click", openFromDrive); }
 $("pptx-file").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) openPptx(f); });
 
 /* ---------- backup ---------- */

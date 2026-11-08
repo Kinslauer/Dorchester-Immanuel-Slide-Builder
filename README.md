@@ -20,6 +20,21 @@ There is nothing to install: open the page, pick the songs, and press **Make my 
 
 **Open a PowerPoint to change it** (in step 1) opens a PowerPoint made with this page, on any computer, so it can be changed and made again. Each PowerPoint carries its plan inside (songs, words, look and own pictures). Older ones are rebuilt from their slides.
 
+Google Slides files work too: in Slides choose **File → Download → Microsoft PowerPoint (.pptx)** and open that. If the words were changed in PowerPoint or Google Slides, the changed words are kept.
+
+### Open from Google Drive (optional, one-time setup)
+
+The **Open from Google Drive** button stays hidden until the page has a Google sign-in key. Google requires these to come from the account that owns the app, so they can't be built in. To set it up (about 10 minutes, free):
+
+1. Go to https://console.cloud.google.com, create a project (for example "Sunday Slides"), and note its **project number** on the dashboard.
+2. **APIs & Services → Library**: turn on the **Google Drive API** and the **Google Picker API**.
+3. **APIs & Services → OAuth consent screen**: choose *External*, fill in the app name and your email, add the scope `.../auth/drive.file`, then **Publish app** (this scope doesn't need Google's review).
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID**: type *Web application*, and under *Authorized JavaScript origins* add `https://kinslauer.github.io`.
+5. **Create credentials → API key**, and restrict it to the Google Picker API.
+6. Put the three values in `src/template.html` in `const GOOGLE = { clientId: "...", apiKey: "...", appId: "<project number>" }`, run `python3 build.py`, and commit.
+
+The page only asks for access to the files you pick, not your whole Drive.
+
 Changes and new songs are saved in the browser that made them. **Save a backup of my songs** downloads a file that **Restore from a backup** can load on another computer or browser.
 
 ## Sunday Live (running the service)
