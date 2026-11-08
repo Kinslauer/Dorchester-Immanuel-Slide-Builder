@@ -291,6 +291,7 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
     <input type="text" id="dlg-name">
     <div id="dlg-words-wrap" class="panel">
       <label for="dlg-words" style="font-weight:700">Words</label>
+      <p class="hint" id="hymn-find" style="margin:0" hidden>Optional: to put the verses on screen, <a id="hymn-link" href="https://hymnary.org/" target="_blank" rel="noopener">find this hymn on Hymnary.org</a>, copy the verses and paste them here. Leave it empty for just the title slide.</p>
       <p class="hint" style="margin:0">Leave one empty line where you want a new slide to start. You can paste words copied from PowerPoint or Google Slides: copy one slide or several, and each becomes its own slide here.</p>
       <textarea id="dlg-words"></textarea>
       <p class="hint" id="paste-note" style="margin:0" hidden></p>
@@ -695,14 +696,18 @@ function openEdit(opts) {
   $("dlg-title").textContent = opts.entry != null ? "Change the words" : hymn ? "Add a hymn from the book" : "Type in a new song";
   $("dlg-name").value = s ? s.t : "";
   $("dlg-name").placeholder = hymn ? "For example: Amazing Grace #92" : "For example: Amazing Grace";
-  $("dlg-words-wrap").hidden = !!hymn;
+  $("dlg-words-wrap").hidden = false; $("hymn-find").hidden = !hymn; editing.hymnMode = !!hymn;
   $("dlg-words").value = s && !hymn ? s.s.join("\n\n") : ""; $("paste-note").hidden = true;
   $("dlg-delete").hidden = opts.entry == null;
   $("dlg-confirm").hidden = true; $("dlg-delete").dataset.armed = "";
   $("dlg-delete").textContent = "Remove from my song list";
   dlg.showModal();
   (opts.entry != null && !hymn ? $("dlg-words") : $("dlg-name")).focus();
+  hymnLink();
 }
+// Search Hymnary.org for the hymn name (without a "#92" hymnal number).
+function hymnLink() { const q = $("dlg-name").value.replace(/#\s*\d+/g, "").trim(); $("hymn-link").href = q ? "https://hymnary.org/search?qu=" + encodeURIComponent(q) : "https://hymnary.org/"; }
+$("dlg-name").addEventListener("input", hymnLink);
 $("dlg-cancel").addEventListener("click", () => $("dlg").close());
 // Pasting from PowerPoint or Google Slides: keep each slide (or text box) as its own slide, one line per paragraph.
 function htmlToSlides(html) {
@@ -756,8 +761,10 @@ $("dlg-words").addEventListener("paste", e => {
 });
 $("dlg-save").addEventListener("click", () => {
   const name = $("dlg-name").value.trim();
-  const hymn = $("dlg-words-wrap").hidden;
-  const words = $("dlg-words").value.replace(/\r/g, "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  let words = $("dlg-words").value.replace(/\r/g, "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  // Verses copied from a hymnal site start with their number ("1 Amazing grace…"): drop it.
+  if (words.length > 1 && words.every(w => /^\d{1,2}[.)]?\s/.test(w))) words = words.map(w => w.replace(/^\d{1,2}[.)]?\s+/, ""));
+  const hymn = editing.hymnMode && !words.length;
   if (!name) { $("dlg-name").focus(); $("dlg-name").placeholder = "Please type a name first"; return; }
   if (!hymn && !words.length) { $("dlg-words").focus(); return; }
   const data = hymn ? { t: name, k: "hymn", s: [name + "\n(Hymn)"] } : { t: name, k: "song", s: words };
