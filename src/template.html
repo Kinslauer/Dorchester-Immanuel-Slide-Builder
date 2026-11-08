@@ -81,6 +81,10 @@ ol.chosen .acts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px;
 .lib .song .words mark { background: var(--accent-soft); color: inherit; font-style: normal; border-radius: 3px; padding: 0 2px; }
 .lib button.peek { border: 0; border-radius: 0; border-left: 1px solid var(--line); font-size: .85rem; padding: 0 12px; color: var(--muted); white-space: nowrap; }
 .lib button.peek[aria-expanded=true] { color: var(--accent); background: var(--accent-soft); }
+.lib .lib-head { padding: 10px 16px 6px; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--accent-soft); }
+.hymnal-hits { display: grid; gap: 6px; margin: 6px 0 2px; }
+.hymnal-hits button { text-align: left; }
+.hymnal-hits small { display: block; color: var(--muted); font-style: italic; }
 .lib .all-words { grid-column: 1 / -1; padding: 4px 16px 14px; display: grid; gap: 8px; font-size: .92rem; }
 .lib .all-words div { white-space: pre-line; border-left: 3px solid var(--line); padding-left: 10px; }
 .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -283,7 +287,10 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
     <input type="text" id="dlg-name">
     <div id="dlg-words-wrap" class="panel">
       <label for="dlg-words" style="font-weight:700">Words</label>
-      <p class="hint" id="hymn-find" style="margin:0" hidden>Optional: to put the verses on screen, <a id="hymn-link" href="https://hymnary.org/" target="_blank" rel="noopener">find this hymn on Hymnary.org</a>, copy the verses and paste them here. Leave it empty for just the title slide.</p>
+      <div id="hymn-find" hidden>
+        <p class="hint" style="margin:0">Optional: put the verses on screen. Pick the hymn below if it's in the built-in hymnal (as you type the name), or <a id="hymn-link" href="https://hymnary.org/" target="_blank" rel="noopener">find it on Hymnary.org</a>, copy the verses and paste them here. Leave it empty for just the title slide.</p>
+        <div class="hymnal-hits" id="hymnal-hits"></div>
+      </div>
       <p class="hint" style="margin:0">Leave one empty line where you want a new slide to start. You can paste words copied from PowerPoint or Google Slides: copy one slide or several, and each becomes its own slide here.</p>
       <textarea id="dlg-words"></textarea>
       <p class="hint" id="paste-note" style="margin:0" hidden></p>
@@ -300,6 +307,20 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
 <script>/*PPTXGEN*/</script>
 <script>
 const BUILTIN = /*SONGS*/;
+// Public-domain hymns ({t, a: words by, s: verses}) from the Open Hymnal Project.
+const HYMNAL = /*HYMNS*/;
+function hymnalFind(q, n) {
+  q = q.toLowerCase().trim(); if (!q) return [];
+  const have = new Set(library().filter(s => s.k !== "hymn").map(s => s.t.toLowerCase().replace(/[^a-z]/g, "")));
+  const t = HYMNAL.filter(h => h.t.toLowerCase().includes(q)), w = HYMNAL.filter(h => !h.t.toLowerCase().includes(q) && h.s.join(" ").toLowerCase().includes(q));
+  return t.concat(w).filter(h => !have.has(h.t.toLowerCase().replace(/[^a-z]/g, ""))).slice(0, n || 50);
+}
+// Copy a hymnal hymn into her song list (so it can be changed) and return its id.
+function addFromHymnal(h) {
+  const id = "c" + Date.now();
+  custom.added.push({ id, d: week.date, t: h.t, k: "song", s: h.s.slice(), from: "Open Hymnal" });
+  return id;
+}
 const IMG = /*IMAGES*/;
 
 /* ---------- storage ---------- */
@@ -526,7 +547,8 @@ function renderLib() {
   const chosenIds = new Set(week.songs.map(e => e.id));
   const list = library().filter(s => !q || s.t.toLowerCase().includes(q) || s.s.join(" ").toLowerCase().includes(q))
     .sort((a, b) => q ? (b.t.toLowerCase().includes(q) - a.t.toLowerCase().includes(q)) : 0);
-  if (!list.length) { box.append(el("p", { class: "hint", style: "padding:14px" }, "No song found. Tap “+ Type in a new song” to add it.")); return; }
+  const fromBook = hymnalFind(q, 30);
+  if (!list.length && !fromBook.length) { box.append(el("p", { class: "hint", style: "padding:14px" }, "No song found. Tap “+ Type in a new song” to add it.")); return; }
   list.forEach(s => {
     const already = chosenIds.has(s.id);
     const meta = s.k === "hymn" ? "Hymn title" : s.s.length + (s.s.length === 1 ? " slide" : " slides") + (s.d ? " · last used " + new Date(s.d + "T12:00").toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "");
@@ -542,6 +564,19 @@ function renderLib() {
     }
     box.append(row);
   });
+  if (fromBook.length) {
+    box.append(el("div", { class: "lib-head", text: "From the hymnal (public domain)" }));
+    fromBook.forEach(h => {
+      const key = "h:" + h.t, open = libOpen.has(key);
+      const btn = el("button", { type: "button", class: "song", on: { click: () => { week.songs.push({ id: addFromHymnal(h) }); changed(); } } },
+        el("span", {}, h.t, el("span", { class: "meta", text: h.s.length + (h.s.length === 1 ? " slide" : " slides") + (h.a ? " · words: " + h.a.replace(/,.*$/, "") : "") }), wordsHint({ k: "song", t: h.t, s: h.s }, q)),
+        el("span", { class: "add", text: "+ Add" }));
+      const row = el("div", { class: "song-row", role: "listitem" }, btn,
+        el("button", { type: "button", class: "peek", "aria-expanded": String(open), "aria-label": "Show all the words of " + h.t, on: { click: () => { open ? libOpen.delete(key) : libOpen.add(key); renderLib(); } } }, open ? "Hide words ▴" : "Words ▾"));
+      if (open) row.append(el("div", { class: "all-words" }, ...h.s.map(x => el("div", { text: x }))));
+      box.append(row);
+    });
+  }
 }
 
 function renderLook() {
@@ -695,7 +730,16 @@ function openEdit(opts) {
   hymnLink();
 }
 // Search Hymnary.org for the hymn name (without a "#92" hymnal number).
-function hymnLink() { const q = $("dlg-name").value.replace(/#\s*\d+/g, "").trim(); $("hymn-link").href = q ? "https://hymnary.org/search?qu=" + encodeURIComponent(q) : "https://hymnary.org/"; }
+function hymnLink() {
+  const q = $("dlg-name").value.replace(/#\s*\d+/g, "").trim(); $("hymn-link").href = q ? "https://hymnary.org/search?qu=" + encodeURIComponent(q) : "https://hymnary.org/";
+  const box = $("hymnal-hits"); box.innerHTML = "";
+  if (!editing || !editing.hymnMode || q.length < 3) return;
+  HYMNAL.filter(h => h.t.toLowerCase().includes(q.toLowerCase())).slice(0, 5).forEach(h => box.append(el("button", { type: "button", class: "small", on: { click: () => {
+    const num = ($("dlg-name").value.match(/#\s*\d+/) || [""])[0];
+    $("dlg-name").value = h.t + (num ? " " + num : ""); $("dlg-words").value = h.s.join("\n\n"); box.innerHTML = "";
+    $("paste-note").hidden = false; $("paste-note").textContent = "Added " + h.s.length + " slides from the hymnal. Check the verses match your hymnal, then tap Save.";
+  } } }, "Use “" + h.t + "”", el("small", { text: "“" + h.s[0].split("\n").slice(0, 2).join(" / ") + "”" }))));
+}
 $("dlg-name").addEventListener("input", hymnLink);
 $("dlg-cancel").addEventListener("click", () => $("dlg").close());
 // Pasting from PowerPoint or Google Slides: keep each slide (or text box) as its own slide, one line per paragraph.

@@ -22,6 +22,10 @@ There is nothing to install: open the page, pick the songs, and press **Make my 
 
 Google Slides files work too: in Slides choose **File → Download → Microsoft PowerPoint (.pptx)** and open that. If the words were changed in PowerPoint or Google Slides, the changed words are kept.
 
+### Built-in hymnal
+
+`src/hymns.json` holds 271 public-domain hymns from the [Open Hymnal Project](https://github.com/mzealey/openhymnal) (words only, one slide per verse, refrain as its own slide). They show up under **From the hymnal** when you search the song list (in both pages), and in the **+ Hymn from the book** box as you type a name. Adding one copies it into your song list so you can change the words. To rebuild it: clone that repository and run `python3 tools/make_hymns.py <path>`. The verses were pulled out of music files, so check a hymn against your hymnal the first time you use it.
+
 ### Open from Google Drive (optional, one-time setup)
 
 The **Open from Google Drive** button stays hidden until the page has a Google sign-in key. Google requires these to come from the account that owns the app, so they can't be built in. To set it up (about 10 minutes, free):
