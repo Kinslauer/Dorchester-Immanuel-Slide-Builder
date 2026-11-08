@@ -291,8 +291,9 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
     <input type="text" id="dlg-name">
     <div id="dlg-words-wrap" class="panel">
       <label for="dlg-words" style="font-weight:700">Words</label>
-      <p class="hint" style="margin:0">Leave one empty line where you want a new slide to start.</p>
+      <p class="hint" style="margin:0">Leave one empty line where you want a new slide to start. You can paste words copied from PowerPoint or Google Slides: copy one slide or several, and each becomes its own slide here.</p>
       <textarea id="dlg-words"></textarea>
+      <p class="hint" id="paste-note" style="margin:0" hidden></p>
     </div>
     <p id="dlg-confirm" class="hint" hidden></p>
     <div class="row">
@@ -695,7 +696,7 @@ function openEdit(opts) {
   $("dlg-name").value = s ? s.t : "";
   $("dlg-name").placeholder = hymn ? "For example: Amazing Grace #92" : "For example: Amazing Grace";
   $("dlg-words-wrap").hidden = !!hymn;
-  $("dlg-words").value = s && !hymn ? s.s.join("\n\n") : "";
+  $("dlg-words").value = s && !hymn ? s.s.join("\n\n") : ""; $("paste-note").hidden = true;
   $("dlg-delete").hidden = opts.entry == null;
   $("dlg-confirm").hidden = true; $("dlg-delete").dataset.armed = "";
   $("dlg-delete").textContent = "Remove from my song list";
@@ -703,6 +704,56 @@ function openEdit(opts) {
   (opts.entry != null && !hymn ? $("dlg-words") : $("dlg-name")).focus();
 }
 $("dlg-cancel").addEventListener("click", () => $("dlg").close());
+// Pasting from PowerPoint or Google Slides: keep each slide (or text box) as its own slide, one line per paragraph.
+function htmlToSlides(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll("script,style,title,meta").forEach(n => n.remove());
+  const BLOCK = /^(P|DIV|LI|H[1-6]|TR|BLOCKQUOTE)$/;
+  const out = []; let cur = [], line = "";
+  const endLine = () => { if (line.trim()) cur.push(line.trim()); line = ""; };
+  const endSlide = () => { endLine(); if (cur.length) out.push(cur.join("\n")); cur = []; };
+  (function walk(n) {
+    for (const c of n.childNodes) {
+      if (c.nodeType === 3) { line += c.nodeValue.replace(/[\s\u00a0]+/g, " "); continue; }
+      if (c.nodeType !== 1) continue;
+      if (c.tagName === "BR") { endLine(); continue; }
+      // A slide or a text box: anything that holds more than one paragraph of its own.
+      const box = c.tagName === "TABLE" || c.tagName === "svg" || /slide|shape|textbox/i.test((c.className && c.className.baseVal != null ? c.className.baseVal : c.className) + " " + (c.id || "")) || (c.tagName === "DIV" && [...c.children].filter(k => BLOCK.test(k.tagName)).length > 1 && c.parentNode === doc.body);
+      if (box) endSlide(); else if (BLOCK.test(c.tagName)) endLine();
+      walk(c);
+      if (box) endSlide(); else if (BLOCK.test(c.tagName)) endLine();
+    }
+  })(doc.body);
+  endSlide();
+  return out;
+}
+function cleanPlain(t) {
+  // PowerPoint and Slides use a vertical tab for a line break inside a paragraph.
+  return t.replace(/\r\n?/g, "\n").replace(/[\u000b\u2028]/g, "\n").replace(/\u2029/g, "\n\n").replace(/[ \t\u00a0]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+$("dlg-words").addEventListener("paste", e => {
+  const cd = e.clipboardData; if (!cd) return;
+  const note = $("paste-note"); note.hidden = true;
+  const plain = cd.getData("text/plain"), html = cd.getData("text/html");
+  let text = "";
+  const fromHtml = html ? htmlToSlides(html) : [];
+  if (fromHtml.length > 1) text = fromHtml.join("\n\n");
+  else if (plain.trim()) text = cleanPlain(plain);
+  else if (fromHtml.length) text = fromHtml.join("\n\n");
+  if (!text) {
+    e.preventDefault();
+    note.hidden = false;
+    note.textContent = "No words came with that copy. Click inside the words on the slide, press Ctrl+A, then Ctrl+C, and paste again." + (cd.types.length ? " (It held: " + [...cd.types].join(", ") + ")" : "");
+    return;
+  }
+  e.preventDefault();
+  const ta = e.target, a = ta.selectionStart, b = ta.selectionEnd, before = ta.value.slice(0, a), after = ta.value.slice(b);
+  const pre = before && !/\n\s*\n\s*$/.test(before) && fromHtml.length > 1 ? "\n\n" : "";
+  ta.value = before + pre + text + after;
+  ta.selectionStart = ta.selectionEnd = (before + pre + text).length;
+  const n = text.split(/\n\s*\n/).filter(x => x.trim()).length;
+  note.hidden = false; note.textContent = "Pasted " + n + (n === 1 ? " slide" : " slides") + ". Check the words, then tap Save.";
+});
 $("dlg-save").addEventListener("click", () => {
   const name = $("dlg-name").value.trim();
   const hymn = $("dlg-words-wrap").hidden;
