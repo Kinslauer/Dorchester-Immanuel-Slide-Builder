@@ -20,6 +20,8 @@ There is nothing to install: open the page, pick the songs, and press **Make my 
 
 **Open a PowerPoint to change it** (in step 1) opens a PowerPoint made with this page, on any computer, so it can be changed and made again. Each PowerPoint carries its plan inside (songs, words, look and own pictures). Older ones are rebuilt from their slides.
 
+**Undo:** taking out a song or an announcement, removing a song from the list, opening a PowerPoint or restoring a backup shows a small pop-up at the bottom with **Undo** for about 7 seconds. Point at the pop-ups to keep them open; if there are several, they spread out so each one can be undone on its own, and the song goes back where it was.
+
 Changes and new songs are saved in the browser that made them. **Save a backup of my songs** downloads a file that **Restore from a backup** can load on another computer or browser.
 
 ## Sunday Live (running the service)
@@ -46,7 +48,7 @@ Changes and new songs are saved in the browser that made them. **Save a backup o
 
 ## Design credits
 
-Both pages borrow ideas from [Magic UI](https://github.com/magicuidesign/magicui) (MIT: dot pattern, border beam, shimmer button, blur fade) and [React Bits](https://github.com/DavidHDev/react-bits) (MIT + Commons Clause: spotlight card, click spark, shiny text). Those libraries are React components. Here the effects are rewritten in a few lines of plain CSS and JavaScript, so the pages stay single files that work offline. In Sunday Live, **View → Turn animations off** stops the moving effects on a slow computer. Both pages also respect the computer's "reduce motion" setting.
+Both pages borrow ideas from [Magic UI](https://github.com/magicuidesign/magicui) (MIT: dot pattern, border beam, shimmer button, blur fade), [Sonner](https://github.com/emilkowalski/sonner) (MIT: the stacked Undo pop-ups in the builder) and [React Bits](https://github.com/DavidHDev/react-bits) (MIT + Commons Clause: spotlight card, click spark, shiny text). Those libraries are React components. Here the effects are rewritten in a few lines of plain CSS and JavaScript, so the pages stay single files that work offline. In Sunday Live, **View → Turn animations off** stops the moving effects on a slow computer. Both pages also respect the computer's "reduce motion" setting.
 
 ## How it's built
 
