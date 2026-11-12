@@ -152,6 +152,19 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
 .spark { position: fixed; width: 3px; height: 11px; background: var(--accent); border-radius: 2px; pointer-events: none; z-index: 60; transform-origin: 50% 0; animation: spark .45s ease-out forwards; }
 @keyframes spark { from { opacity: 1; transform: rotate(var(--r)) translateY(4px); } to { opacity: 0; transform: rotate(var(--r)) translateY(24px) scaleY(.2); } }
 @media (prefers-reduced-motion: reduce) { .shimmer::before, .shiny, .enter, .spark { animation: none !important; } .shiny { color: var(--ink); background: none; } }
+/* undo toasts (pattern from Sonner by Emil Kowalski, MIT: stacked, pause on hover, undo over confirm) */
+.toasts { position: fixed; left: 50%; bottom: calc(var(--above, 0px) + 12px); transform: translateX(-50%); width: min(460px, calc(100vw - 32px)); z-index: 50; display: grid; }
+.toast { grid-area: 1 / 1; align-self: end; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 12px; background: var(--ink); color: var(--bg); box-shadow: 0 8px 28px rgba(0,0,0,.28); font-weight: 600; transform-origin: bottom center; }
+.toast span { flex: 1; }
+.toast button { min-height: 44px; background: var(--bg); color: var(--ink); border-color: var(--bg); font-weight: 700; }
+.toast button.x { min-width: 44px; padding: 0; background: transparent; color: var(--bg); border-color: transparent; font-size: 1.3rem; }
+.toast .bar { position: absolute; left: 12px; right: 12px; bottom: 4px; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--bg) 35%, transparent); transform-origin: left; }
+@media (prefers-reduced-motion: no-preference) {
+  .toast { transition: transform .35s cubic-bezier(.2,.9,.3,1), opacity .35s; }
+  .toast.in { animation: toast-in .35s cubic-bezier(.2,.9,.3,1); }
+  .toast.out { opacity: 0; transform: translateY(12px) scale(.96) !important; }
+}
+@keyframes toast-in { from { opacity: 0; transform: translateY(24px); } }
 </style>
 
 <div class="wrap">
@@ -273,6 +286,7 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
   </div>
 </div>
 
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 <dialog id="dlg">
   <form method="dialog" id="dlg-form">
     <h2 id="dlg-title">Change the words</h2>
@@ -494,7 +508,7 @@ function renderChosen() {
       el("button", { type: "button", class: "small", "aria-label": "Move up", on: { click: () => move(i, -1) } }, "▲ Up"),
       el("button", { type: "button", class: "small", "aria-label": "Move down", on: { click: () => move(i, 1) } }, "▼ Down"),
       el("button", { type: "button", class: "small", on: { click: () => openEdit({ entry: i }) } }, "Change words"),
-      el("button", { type: "button", class: "small danger", on: { click: () => { week.songs.splice(i, 1); changed(); } } }, "Take out")
+      el("button", { type: "button", class: "small danger", on: { click: () => { const prev = week.songs[i - 1], next = week.songs[i + 1]; week.songs.splice(i, 1); changed(); undoable("Took out “" + songTitle(e) + "”.", () => songBack(e, i, prev, next)); } } }, "Take out")
     );
     ol.append(el("li", {}, t, acts));
   });
@@ -630,6 +644,17 @@ function renderPreview() {
   $("pv-label").textContent = s.title + " · slide " + s.n + " (" + (pv + 1) + " of " + slides.length + ")";
 }
 
+// Put a song back next to the song it was beside, even if other songs were taken out or moved since.
+function songBack(e, i, prev, next) {
+  const a = prev ? week.songs.indexOf(prev) : -1, b = next ? week.songs.indexOf(next) : -1;
+  const at = !prev ? 0 : a >= 0 ? a + 1 : b >= 0 ? b : Math.min(i, week.songs.length);
+  week.songs.splice(at, 0, e);
+}
+function putAnnBack(i, text, bg) {
+  i = Math.min(i, week.anns.length); week.anns.splice(i, 0, text);
+  const nb = {}; for (const k in (week.annBgs || {})) nb[+k < i ? k : +k + 1] = week.annBgs[k];
+  if (bg !== undefined) nb[i] = bg; week.annBgs = nb;
+}
 function renderExtras() {
   $("w-start").checked = week.welcomeStart; $("w-end").checked = week.welcomeEnd;
   const w = $("welcomes"); w.innerHTML = "";
@@ -640,11 +665,54 @@ function renderExtras() {
     const ta = el("textarea", { id: "ann-" + i, "aria-label": "Announcement " + (i + 1), placeholder: "For example: Fellowship lunch after service today. Everyone is welcome!" });
     ta.value = a;
     ta.addEventListener("input", () => { week.anns[i] = ta.value; persist(); deckSoon(); });
-    box.append(el("div", { class: "ann" }, ta, el("div", { class: "row" }, el("button", { type: "button", class: "small danger", on: { click: () => { week.anns.splice(i, 1); const nb = {}; for (const k in (week.annBgs || {})) { if (+k < i) nb[k] = week.annBgs[k]; else if (+k > i) nb[+k - 1] = week.annBgs[k]; } week.annBgs = nb; changed(); } } }, "Remove this announcement"))));
+    box.append(el("div", { class: "ann" }, ta, el("div", { class: "row" }, el("button", { type: "button", class: "small danger", on: { click: () => { const text = week.anns[i], bg = (week.annBgs || {})[i]; week.anns.splice(i, 1); const nb = {}; for (const k in (week.annBgs || {})) { if (+k < i) nb[k] = week.annBgs[k]; else if (+k > i) nb[+k - 1] = week.annBgs[k]; } week.annBgs = nb; changed(); undoable("Removed announcement " + (i + 1) + ".", () => putAnnBack(i, text, bg)); } } }, "Remove this announcement"))));
   });
 }
 
 function changed() { persist(); renderChosen(); renderLib(); renderLook(); renderPreview(); renderExtras(); renderDeck(); $("status").textContent = ""; }
+/* ---------- undo pop-ups ---------- */
+// Removing something shows a pop-up with Undo for a few seconds, so one wrong tap is never lost.
+const TOAST_MS = 7000, toasts = [];
+function snapshot() { return JSON.stringify({ week, custom }); }
+function restorer(before) { return () => { const b = JSON.parse(before); week = b.week; custom = b.custom; }; }
+// undo puts back only what this one action took, so later changes stay.
+function undoable(message, undo) {
+  const box = $("toasts"), t = { left: TOAST_MS, start: 0, timer: 0 };
+  const close = () => {
+    clearTimeout(t.timer); const i = toasts.indexOf(t); if (i < 0) return; toasts.splice(i, 1);
+    t.node.classList.add("out"); setTimeout(() => t.node.remove(), 350); stack();
+  };
+  const run = () => { t.start = Date.now(); t.timer = setTimeout(close, t.left); t.bar.style.transition = "transform " + t.left + "ms linear"; t.bar.style.transform = "scaleX(0)"; };
+  const pause = () => { if (!t.timer) return; clearTimeout(t.timer); t.timer = 0; t.left = Math.max(1500, t.left - (Date.now() - t.start)); const k = t.left / TOAST_MS; t.bar.style.transition = "none"; t.bar.style.transform = "scaleX(" + k + ")"; };
+  t.bar = el("i", { class: "bar", "aria-hidden": "true" });
+  t.node = el("div", { class: "toast in" },
+    el("span", { text: message }),
+    el("button", { type: "button", class: "small", on: { click: () => { undo(); changed(); close(); } } }, "Undo"),
+    el("button", { type: "button", class: "small x", "aria-label": "Close", on: { click: close } }, "×"),
+    t.bar);
+  t.pause = pause; t.run = () => { if (!t.timer) run(); };
+  toasts.unshift(t); box.append(t.node);
+  while (toasts.length > 3) { const old = toasts[toasts.length - 1]; clearTimeout(old.timer); toasts.pop(); old.node.remove(); }
+  stack(); requestAnimationFrame(() => { if (!spread) run(); });
+}
+// Newest in front; older ones peek out above it like a stack of cards. Pointing at the stack (or tabbing into it)
+// spreads it out and stops the clocks, so every Undo can be reached.
+let spread = false;
+function stack() {
+  const bar = document.querySelector(".makebar");
+  $("toasts").style.setProperty("--above", bar ? bar.offsetHeight + "px" : "env(safe-area-inset-bottom)");
+  let y = 0;
+  toasts.forEach((t, i) => {
+    t.node.style.transform = spread ? "translateY(" + (-y) + "px)" : "translateY(" + (-10 * i) + "px) scale(" + (1 - .05 * i) + ")";
+    y += t.node.offsetHeight + 8;
+    t.node.style.zIndex = 10 - i; t.node.style.opacity = spread || !i ? 1 : .9; t.node.inert = !spread && i > 0;
+  });
+}
+function setSpread(on) { if (spread === on) return; spread = on; toasts.forEach(x => on ? x.pause() : x.run()); stack(); }
+$("toasts").addEventListener("pointerenter", () => setSpread(true));
+$("toasts").addEventListener("pointerleave", () => setSpread(false));
+$("toasts").addEventListener("focusin", () => setSpread(true));
+$("toasts").addEventListener("focusout", e => { if (!$("toasts").contains(e.relatedTarget)) setSpread(false); });
 let deckT;
 function deckSoon() { clearTimeout(deckT); deckT = setTimeout(() => { renderDeck(); renderPreview(); }, 350); }
 
@@ -689,10 +757,10 @@ $("dlg-save").addEventListener("click", () => {
 $("dlg-delete").addEventListener("click", () => {
   const btn = $("dlg-delete");
   if (!btn.dataset.armed) { btn.dataset.armed = "1"; btn.textContent = "Yes, remove it for good"; $("dlg-confirm").hidden = false; $("dlg-confirm").textContent = "This takes the song out of your song list. Tap the red button again to be sure."; return; }
-  const e = week.songs[editing.entry];
+  const at = editing.entry, e = week.songs[at], name = songTitle(e), prev = week.songs[at - 1], next = week.songs[at + 1];
   custom.removed.push(e.id);
   week.songs.splice(editing.entry, 1);
-  $("dlg").close(); changed();
+  $("dlg").close(); changed(); undoable("Removed “" + name + "” from your song list.", () => { custom.removed = custom.removed.filter(x => x !== e.id); songBack(e, at, prev, next); });
 });
 $("btn-new").addEventListener("click", () => openEdit({}));
 $("btn-hymn").addEventListener("click", () => openEdit({ hymn: true }));
@@ -906,6 +974,7 @@ function weekFromSlides(slides, title) {
 async function openPptx(f) {
   const st = $("open-status");
   st.className = "hint"; st.textContent = "Opening “" + f.name + "”…";
+  const before = snapshot();
   try {
     const zip = await JSZip.loadAsync(f);
     let plan = null;
@@ -940,7 +1009,7 @@ async function openPptx(f) {
     }
     if (!week.date) week.date = nextSunday();
     week.anns = week.anns || []; week.songs = week.songs || [];
-    deckSel = null; changed();
+    deckSel = null; changed(); undoable("Opened “" + f.name + "”. Undo brings back what you had before.", restorer(before));
     st.className = "hint ok"; st.textContent = "Opened “" + f.name + "”: " + week.songs.length + (week.songs.length === 1 ? " song" : " songs") + ". Change anything, then make the PowerPoint again." + note;
   } catch (e) {
     console.warn(e);
@@ -955,7 +1024,8 @@ $("btn-backup").addEventListener("click", () => offerFile("Sunday Slides backup 
 $("btn-restore").addEventListener("click", () => $("restore-file").click());
 $("restore-file").addEventListener("change", async e => {
   const f = e.target.files[0]; if (!f) return;
-  try { const j = JSON.parse(await f.text()); if (j.custom) custom = j.custom; if (j.week) week = j.week; changed(); $("status").className = "ok"; $("status").textContent = "Your songs are back."; }
+  const before = snapshot();
+  try { const j = JSON.parse(await f.text()); if (j.custom) custom = j.custom; if (j.week) week = j.week; changed(); undoable("Loaded the backup.", restorer(before)); $("status").className = "ok"; $("status").textContent = "Your songs are back."; }
   catch (err) { $("status").className = "bad"; $("status").textContent = "That file is not a Sunday Slides backup."; }
 });
 
