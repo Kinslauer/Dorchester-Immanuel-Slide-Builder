@@ -1361,10 +1361,37 @@ function openEdit(o) {
   $("dlg").showModal();
   (s && !hymn ? $("dlg-words") : $("dlg-name")).focus();
 }
+// Words copied from a hymnal site: "#771", "1 When upon life's billows…", "Refrain:", "… [Refrain]".
+// Each verse becomes a slide, and the refrain gets its own slide after every verse.
+function hymnSlides(text) {
+  const lines = text.replace(/\r/g, "").split("\n").map(l => l.trim());
+  const VERSE = /^(\d{1,2})[.):]?\s+(\S.*)$/, REF = /^(?:refrain|chorus)(?:\s*:\s*(.*))?$/i, MARK = /\s*[\[(](refrain|chorus)[\])]\s*$/i;
+  if (lines.filter(l => VERSE.test(l)).length < 2) return text;
+  const verses = []; let refrain = null, cur = null;
+  for (let l of lines) {
+    if (!l || /^#\s*\d+$/.test(l)) continue;
+    l = l.replace(MARK, "");
+    let m;
+    if ((m = l.match(VERSE))) { cur = []; verses.push(cur); cur.push(m[2]); }
+    else if ((m = l.match(REF)) && refrain === null) { refrain = []; cur = refrain; if (m[1]) cur.push(m[1]); }
+    else if ((m = l.match(REF))) { cur = []; } // a second copy of the refrain: skip it
+    else if (cur) cur.push(l);
+  }
+  const out = [];
+  verses.forEach(v => { if (v.length) out.push(v.join("\n")); if (refrain && refrain.length) out.push(refrain.join("\n")); });
+  return out.length > 1 ? out.join("\n\n") : text;
+}
+// Pasted hymnal text is split into verses and refrains right away, so it can be checked before saving.
+$("dlg-words").addEventListener("paste", e => {
+  const t = e.clipboardData && e.clipboardData.getData("text/plain"); if (!t) return;
+  const f = hymnSlides(t.replace(/\r\n?/g, "\n").replace(/[\u000b]/g, "\n")); if (f === t) return;
+  e.preventDefault(); const ta = e.target, a = ta.selectionStart, z = ta.selectionEnd;
+  ta.value = ta.value.slice(0, a) + f + ta.value.slice(z); ta.selectionStart = ta.selectionEnd = a + f.length;
+});
 $("dlg-cancel").addEventListener("click", () => $("dlg").close());
 $("dlg-save").addEventListener("click", () => {
   const name = $("dlg-name").value.trim(), hymn = $("dlg-words-wrap").hidden;
-  const words = $("dlg-words").value.replace(/\r/g, "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  const words = hymnSlides($("dlg-words").value.replace(/\r/g, "")).split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
   if (!name) { $("dlg-name").focus(); return; }
   if (!hymn && !words.length) { $("dlg-words").focus(); return; }
   const data = hymn ? { t: name, k: "hymn", s: [name + "\n(Hymn)"] } : { t: name, k: "song", s: words };

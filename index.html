@@ -852,7 +852,7 @@ function htmlToSlides(html) {
 // Each verse becomes a slide, and the refrain gets its own slide after every verse.
 function hymnSlides(text) {
   const lines = text.replace(/\r/g, "").split("\n").map(l => l.trim());
-  const VERSE = /^(\d{1,2})[.):]?\s+(\S.*)$/, REF = /^(refrain|chorus)\s*:?\s*(.*)$/i, MARK = /\s*[\[(](refrain|chorus)[\])]\s*$/i;
+  const VERSE = /^(\d{1,2})[.):]?\s+(\S.*)$/, REF = /^(?:refrain|chorus)(?:\s*:\s*(.*))?$/i, MARK = /\s*[\[(](refrain|chorus)[\])]\s*$/i;
   if (lines.filter(l => VERSE.test(l)).length < 2) return text;
   const verses = []; let refrain = null, cur = null;
   for (let l of lines) {
@@ -860,7 +860,7 @@ function hymnSlides(text) {
     l = l.replace(MARK, "");
     let m;
     if ((m = l.match(VERSE))) { cur = []; verses.push(cur); cur.push(m[2]); }
-    else if ((m = l.match(REF)) && refrain === null) { refrain = []; cur = refrain; if (m[2]) cur.push(m[2]); }
+    else if ((m = l.match(REF)) && refrain === null) { refrain = []; cur = refrain; if (m[1]) cur.push(m[1]); }
     else if ((m = l.match(REF))) { cur = []; } // a second copy of the refrain: skip it
     else if (cur) cur.push(l);
   }
