@@ -30,9 +30,12 @@ def build():
         "church": data_uri(SRC / "assets/church.jpg", "image/jpeg"),
     }
     songs = json.dumps(json.loads((SRC / "songs.json").read_text()), ensure_ascii=False, separators=(",", ":"))
+    # Public-domain hymns from the Open Hymnal Project (tools/make_hymns.py).
+    hymns = json.dumps(json.loads((SRC / "hymns.json").read_text()), ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     pptxgen = (ROOT / "vendor/pptxgen.bundle.js").read_text()
     pptxgen = pptxgen.replace("//# sourceMappingURL=pptxgen.bundle.js.map", "")
     page = (page.replace("/*SONGS*/", songs.replace("</", "<\\/"))
+                .replace("/*HYMNS*/", hymns)
                 .replace("/*IMAGES*/", json.dumps(images))
                 .replace("/*PPTXGEN*/", pptxgen.replace("</script", "<\\/script")))
     (ROOT / "index.html").write_text(HEAD + page + TAIL)
@@ -41,6 +44,7 @@ def build():
               for p in sorted((SRC / "bible").glob("*.json.gz"), key=lambda p: p.name != "KJV.json.gz")}
     live = (SRC / "live.html").read_text()
     live = (live.replace("/*SONGS*/", songs.replace("</", "<\\/"))
+                .replace("/*HYMNS*/", hymns)
                 .replace("/*IMAGES*/", json.dumps(images))
                 .replace("/*BIBLES*/", json.dumps(bibles)))
     (ROOT / "live.html").write_text(HEAD + live + TAIL)

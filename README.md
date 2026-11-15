@@ -22,6 +22,25 @@ There is nothing to install: open the page, pick the songs, and press **Make my 
 
 **Undo:** taking out a song or an announcement, removing a song from the list, opening a PowerPoint or restoring a backup shows a small pop-up at the bottom with **Undo** for about 7 seconds. Point at the pop-ups to keep them open; if there are several, they spread out so each one can be undone on its own, and the song goes back where it was.
 
+Google Slides files work too: in Slides choose **File → Download → Microsoft PowerPoint (.pptx)** and open that. If the words were changed in PowerPoint or Google Slides, the changed words are kept.
+
+### Built-in hymnal
+
+`src/hymns.json` holds 271 public-domain hymns from the [Open Hymnal Project](https://github.com/mzealey/openhymnal) (words only, one slide per verse, refrain as its own slide). They show up under **From the hymnal** when you search the song list (in both pages), and in the **+ Hymn from the book** box as you type a name. Adding one copies it into your song list so you can change the words. To rebuild it: clone that repository and run `python3 tools/make_hymns.py <path>`. The verses were pulled out of music files, so check a hymn against your hymnal the first time you use it.
+
+### Open from Google Drive (optional, one-time setup)
+
+The **Open from Google Drive** button stays hidden until the page has a Google sign-in key. Google requires these to come from the account that owns the app, so they can't be built in. To set it up (about 10 minutes, free):
+
+1. Go to https://console.cloud.google.com, create a project (for example "Sunday Slides"), and note its **project number** on the dashboard.
+2. **APIs & Services → Library**: turn on the **Google Drive API** and the **Google Picker API**.
+3. **APIs & Services → OAuth consent screen**: choose *External*, fill in the app name and your email, add the scope `.../auth/drive.file`, then **Publish app** (this scope doesn't need Google's review).
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID**: type *Web application*, and under *Authorized JavaScript origins* add `https://kinslauer.github.io`.
+5. **Create credentials → API key**, and restrict it to the Google Picker API.
+6. Put the three values in `src/template.html` in `const GOOGLE = { clientId: "...", apiKey: "...", appId: "<project number>" }`, run `python3 build.py`, and commit.
+
+The page only asks for access to the files you pick, not your whole Drive.
+
 Changes and new songs are saved in the browser that made them. **Save a backup of my songs** downloads a file that **Restore from a backup** can load on another computer or browser.
 
 ## Sunday Live (running the service)

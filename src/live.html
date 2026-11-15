@@ -668,7 +668,12 @@ function library() {
   custom.added.forEach(a => { if (!custom.removed.includes(a.id)) list.push(a); });
   return list.sort((a, b) => a.t.toLowerCase().localeCompare(b.t.toLowerCase()));
 }
-function songById(id) { return library().find(s => s.id === id); }
+// Public-domain hymns ({t, a: words by, s: verses}) from the Open Hymnal Project; ids are "h:<n>".
+const HYMNAL = /*HYMNS*/;
+function songById(id) {
+  if (id && id.startsWith("h:")) { const h = HYMNAL[+id.slice(2)]; return h && { id, t: h.t, k: "song", s: h.s, a: h.a }; }
+  return library().find(s => s.id === id);
+}
 
 /* ---------- Bible ---------- */
 const BOOKS = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
@@ -1312,6 +1317,19 @@ function renderSongs() {
     b.addEventListener("dblclick", () => addSong(s));
     list.append(b);
   });
+  if (q) {
+    const have = new Set(library().filter(s => s.k !== "hymn").map(s => s.t.toLowerCase().replace(/[^a-z]/g, "")));
+    const hits = HYMNAL.map((h, i) => ({ h, i, t: h.t.toLowerCase().includes(q) })).filter(x => (x.t || x.h.s.join(" ").toLowerCase().includes(q)) && !have.has(x.h.t.toLowerCase().replace(/[^a-z]/g, "")))
+      .sort((a, b) => b.t - a.t).slice(0, 30);
+    if (hits.length) list.append(el("div", { class: "empty", style: "padding:8px 12px 4px;font-weight:700", text: "From the hymnal (public domain)" }));
+    hits.forEach(({ h, i }) => {
+      const id = "h:" + i, b = el("button", { type: "button", class: "it" + (songSel === id ? " sel" : "") }, h.t, el("small", { text: h.s[0].replace(/\n/g, " / ") }));
+      b.addEventListener("click", () => { songSel = id; renderSongs(); });
+      b.addEventListener("dblclick", () => addSong(songById(id)));
+      list.append(b);
+    });
+  }
+  if (!lib.length && list.children.length > 1) list.firstChild.remove();
   const s = songSel && songById(songSel), th = $("song-thumbs"), acts = $("song-acts");
   th.innerHTML = ""; acts.innerHTML = "";
   if (!s) { $("song-title").textContent = "Pick a song to see its slides"; return; }
