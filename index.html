@@ -848,6 +848,26 @@ function htmlToSlides(html) {
   endSlide();
   return out;
 }
+// Words copied from a hymnal site: "#771", "1 When upon life's billows…", "Refrain:", "… [Refrain]".
+// Each verse becomes a slide, and the refrain gets its own slide after every verse.
+function hymnSlides(text) {
+  const lines = text.replace(/\r/g, "").split("\n").map(l => l.trim());
+  const VERSE = /^(\d{1,2})[.):]?\s+(\S.*)$/, REF = /^(refrain|chorus)\s*:?\s*(.*)$/i, MARK = /\s*[\[(](refrain|chorus)[\])]\s*$/i;
+  if (lines.filter(l => VERSE.test(l)).length < 2) return text;
+  const verses = []; let refrain = null, cur = null;
+  for (let l of lines) {
+    if (!l || /^#\s*\d+$/.test(l)) continue;
+    l = l.replace(MARK, "");
+    let m;
+    if ((m = l.match(VERSE))) { cur = []; verses.push(cur); cur.push(m[2]); }
+    else if ((m = l.match(REF)) && refrain === null) { refrain = []; cur = refrain; if (m[2]) cur.push(m[2]); }
+    else if ((m = l.match(REF))) { cur = []; } // a second copy of the refrain: skip it
+    else if (cur) cur.push(l);
+  }
+  const out = [];
+  verses.forEach(v => { if (v.length) out.push(v.join("\n")); if (refrain && refrain.length) out.push(refrain.join("\n")); });
+  return out.length > 1 ? out.join("\n\n") : text;
+}
 function cleanPlain(t) {
   // PowerPoint and Slides use a vertical tab for a line break inside a paragraph.
   return t.replace(/\r\n?/g, "\n").replace(/[\u000b\u2028]/g, "\n").replace(/\u2029/g, "\n\n").replace(/[ \t\u00a0]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
@@ -861,6 +881,7 @@ $("dlg-words").addEventListener("paste", e => {
   if (fromHtml.length > 1) text = fromHtml.join("\n\n");
   else if (plain.trim()) text = cleanPlain(plain);
   else if (fromHtml.length) text = fromHtml.join("\n\n");
+  if (text) text = hymnSlides(text);
   if (!text) {
     e.preventDefault();
     note.hidden = false;
@@ -877,7 +898,7 @@ $("dlg-words").addEventListener("paste", e => {
 });
 $("dlg-save").addEventListener("click", () => {
   const name = $("dlg-name").value.trim();
-  let words = $("dlg-words").value.replace(/\r/g, "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  let words = hymnSlides($("dlg-words").value.replace(/\r/g, "")).split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
   // Verses copied from a hymnal site start with their number ("1 Amazing grace…"): drop it.
   if (words.length > 1 && words.every(w => /^\d{1,2}[.)]?\s/.test(w))) words = words.map(w => w.replace(/^\d{1,2}[.)]?\s+/, ""));
   const hymn = editing.hymnMode && !words.length;
