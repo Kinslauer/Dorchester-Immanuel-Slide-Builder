@@ -5,6 +5,8 @@ There is nothing to install: open the page, pick the songs, and press **Make my 
 
 ## Using it
 
+**Start a new Sunday** (top of the page) clears last week's songs and announcements, keeps the look settings, and sets the date to the coming Sunday. An Undo pop-up brings everything back.
+
 1. **Pick this Sunday's songs.** Search the song list by name or by words in the lyrics, then tap a song to add it.
    *Type in a new song* adds a song that isn't in the list (a blank line starts a new slide).
    *Hymn from the book* adds a single title slide, such as "Amazing Grace #92 (Hymn)".

@@ -132,7 +132,8 @@ footer button { font-size: .9rem; min-height: 40px; }
 .mini .wl, .preview .wl { position: absolute; inset: 0; display: grid; justify-items: center; align-content: start; padding-top: 5%; color: #fff; text-align: center; font-family: Garamond, Georgia, serif; line-height: 1.1; }
 .sw { width: 64px; height: 48px; padding: 0; min-height: 0; border-radius: 6px; background-size: cover; background-position: center; }
 .sw[aria-pressed=true] { outline: 3px solid var(--accent); outline-offset: 2px; box-shadow: none; }
-.topbar { display: flex; gap: 10px; align-items: center; }
+.topbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.topbar svg.i { margin-right: 6px; }
 .topbar a { color: var(--accent); font-weight: 700; }
 svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; flex: none; }
 /* Effects: plain CSS/JS versions of ideas from Magic UI (dot pattern, shimmer button, blur fade)
@@ -172,6 +173,7 @@ body { background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, trans
     <h1 class="shiny">Sunday Slides</h1>
     <p>Dorchester Immanuel Church of the Nazarene</p>
     <div class="topbar">
+      <button type="button" class="primary small" id="btn-fresh"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Start a new Sunday</button>
       <a href="live.html">Run the service live →</a>
       <button type="button" class="small" id="btn-theme"><svg class="i" aria-hidden="true" viewBox="0 0 24 24"><path id="theme-path" d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span id="theme-name">Dark mode</span></button>
     </div>
@@ -333,15 +335,17 @@ function library() {
 }
 function songById(id) { return library().find(s => s.id === id); }
 
-function nextSunday() {
-  const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7));
-  return d.toISOString().slice(0, 10);
+// Dates as YYYY-MM-DD in her own time zone (toISOString is UTC, which is already tomorrow on a Saturday evening).
+function localDate(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function nextSunday(after) {
+  const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || (after ? 7 : 0)));
+  return localDate(d);
 }
 let week = load(KEY_WEEK, null) || {
   songs: [], bg: "alt", size: "L", font: "Arial", bold: false,
   welcomeStart: true, welcomeEnd: true, welcome: "black", anns: []
 };
-if (!week.date || week.date < new Date().toISOString().slice(0, 10)) week.date = nextSunday();
+if (!week.date || week.date < localDate(new Date())) week.date = nextSunday();
 function persist() { save(KEY_WEEK, week); save(KEY_LIB, custom); }
 
 /* ---------- look options ---------- */
@@ -1020,6 +1024,18 @@ $("btn-openpptx").addEventListener("click", () => $("pptx-file").click());
 $("pptx-file").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) openPptx(f); });
 
 /* ---------- backup ---------- */
+/* ---------- start a new Sunday ---------- */
+// Clears the songs and announcements but keeps how the slides look, and moves the date to the coming Sunday
+// (on a Sunday that means next week's).
+$("btn-fresh").addEventListener("click", () => {
+  if (!week.songs.length && !week.anns.some(a => a.trim())) { $("find").focus(); return; }
+  const before = snapshot();
+  week = Object.assign({}, week, { songs: [], anns: [], annBgs: {}, date: nextSunday(true) });
+  $("date").value = week.date;
+  changed();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  undoable("Started a new Sunday. Last week's songs are cleared.", () => { restorer(before)(); $("date").value = week.date; });
+});
 $("btn-backup").addEventListener("click", () => offerFile("Sunday Slides backup " + new Date().toISOString().slice(0, 10) + ".json", new Blob([JSON.stringify({ custom, week }, null, 1)], { type: "application/json" })));
 $("btn-restore").addEventListener("click", () => $("restore-file").click());
 $("restore-file").addEventListener("change", async e => {
